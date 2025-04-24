@@ -17210,18 +17210,18 @@ mod impl_cef_display_handler_t {
         browser: *mut _cef_browser_t,
         icon_urls: *mut _cef_string_list_t,
     ) {
-        let (arg_self_, arg_browser, arg_icon_urls) = (self_, browser, icon_urls);
-        let arg_self_: &RcImpl<_, I> = RcImpl::get(arg_self_);
-        let mut arg_browser =
-            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser = arg_browser.as_mut();
-        let mut arg_icon_urls = if arg_icon_urls.is_null() {
-            None
-        } else {
-            Some(arg_icon_urls.into())
-        };
-        let arg_icon_urls = arg_icon_urls.as_mut();
-        ImplDisplayHandler::on_favicon_urlchange(&arg_self_.interface, arg_browser, arg_icon_urls)
+        // let (arg_self_, arg_browser, arg_icon_urls) = (self_, browser, icon_urls);
+        // let arg_self_: &RcImpl<_, I> = RcImpl::get(arg_self_);
+        // let mut arg_browser =
+        //     unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
+        // let arg_browser = arg_browser.as_mut();
+        // let mut arg_icon_urls = if arg_icon_urls.is_null() {
+        //     None
+        // } else {
+        //     Some(arg_icon_urls.into())
+        // };
+        // let arg_icon_urls = arg_icon_urls.as_mut();
+        // ImplDisplayHandler::on_favicon_urlchange(&arg_self_.interface, arg_browser, arg_icon_urls)
     }
     extern "C" fn on_fullscreen_mode_change<I: ImplDisplayHandler>(
         self_: *mut _cef_display_handler_t,
