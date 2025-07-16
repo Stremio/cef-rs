@@ -18,7 +18,6 @@ fn main() -> anyhow::Result<()> {
         Ok(cef_path) => {
             // Allow overriding the CEF path with environment variables.
             println!("Using CEF path from environment: {cef_path}");
-            download_cef::check_archive_json(&env::var("CARGO_PKG_VERSION")?, &cef_path)?;
             PathBuf::from(cef_path)
         }
         Err(_) => {
