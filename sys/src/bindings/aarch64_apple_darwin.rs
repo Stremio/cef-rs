@@ -12,10 +12,11 @@ pub const CEF_API_VERSION_13600: i32 = 13600;
 pub const CEF_API_VERSION_13601: i32 = 13601;
 pub const CEF_API_VERSION_13700: i32 = 13700;
 pub const CEF_API_VERSION_13800: i32 = 13800;
+pub const CEF_API_VERSION_13900: i32 = 13900;
 pub const CEF_API_VERSION_999998: i32 = 999998;
 pub const CEF_API_VERSION_999999: i32 = 999999;
 pub const CEF_API_VERSION_MIN: i32 = 13300;
-pub const CEF_API_VERSION_LAST: i32 = 13800;
+pub const CEF_API_VERSION_LAST: i32 = 13900;
 pub const CEF_API_VERSION_EXPERIMENTAL: i32 = 999999;
 pub const CEF_API_VERSION_NEXT: i32 = 999998;
 pub const CEF_API_VERSION: i32 = 999999;
@@ -1654,7 +1655,6 @@ pub enum cef_errorcode_t {
     ERR_BLOCKED_BY_RESPONSE = -27,
     ERR_CLEARTEXT_NOT_PERMITTED = -29,
     ERR_BLOCKED_BY_CSP = -30,
-    ERR_H2_OR_QUIC_REQUIRED = -31,
     ERR_BLOCKED_BY_ORB = -32,
     ERR_NETWORK_ACCESS_REVOKED = -33,
     ERR_BLOCKED_BY_FINGERPRINTING_PROTECTION = -34,
@@ -1937,7 +1937,9 @@ pub enum cef_resultcode_t {
     CEF_RESULT_CODE_SYSTEM_RESOURCE_EXHAUSTED = 37,
     #[doc = " The browser process exited because it was re-launched without elevation."]
     CEF_RESULT_CODE_NORMAL_EXIT_AUTO_DE_ELEVATED = 38,
-    CEF_RESULT_CODE_CHROME_LAST = 39,
+    #[doc = " Upon encountering a commit failure in a process, PartitionAlloc terminated\n another process deemed less important."]
+    CEF_RESULT_CODE_TERMINATED_BY_OTHER_PROCESS_ON_COMMIT_FAILURE = 39,
+    CEF_RESULT_CODE_CHROME_LAST = 40,
     CEF_RESULT_CODE_SANDBOX_FATAL_FIRST = 7006,
     #[doc = " Windows sandbox could not lower the token."]
     CEF_RESULT_CODE_SANDBOX_FATAL_DROPTOKEN = 7007,
@@ -11891,7 +11893,7 @@ pub struct _cef_request_handler_t {
     pub on_render_view_ready: ::std::option::Option<
         unsafe extern "C" fn(self_: *mut _cef_request_handler_t, browser: *mut _cef_browser_t),
     >,
-    #[doc = "\n Called on the browser process UI thread when the render process is\n unresponsive as indicated by a lack of input event processing for at least\n 15 seconds. Return false (0) for the default behavior which is an\n indefinite wait with Alloy style or display of the \"Page unresponsive\"\n dialog with Chrome style. Return true (1) and don't execute the callback\n for an indefinite wait without display of the Chrome style dialog. Return\n true (1) and call cef_unresponsive_process_callback_t::Wait either in this\n function or at a later time to reset the wait timer, potentially\n triggering another call to this function if the process remains\n unresponsive. Return true (1) and call\n cef_unresponsive_process_callback_t:: Terminate either in this function or\n at a later time to terminate the unresponsive process, resulting in a call\n to OnRenderProcessTerminated. OnRenderProcessResponsive will be called if\n the process becomes responsive after this function is called. This\n functionality depends on the hang monitor which can be disabled by passing\n the `--disable-hang-monitor` command-line flag.\n"]
+    #[doc = "\n Called on the browser process UI thread when the render process is\n unresponsive as indicated by a lack of input event processing for at least\n 15 seconds. Return false (0) for the default behavior which is to continue\n waiting with Alloy style or display of the \"Page unresponsive\" dialog with\n Chrome style. Return true (1) and don't execute the callback to continue\n waiting without display of the Chrome style dialog. Return true (1) and\n call cef_unresponsive_process_callback_t::Wait either in this function or\n at a later time to reset the wait timer. In cases where you continue\n waiting there may be another call to this function if the process remains\n unresponsive. Return true (1) and call\n cef_unresponsive_process_callback_t::Terminate either in this function or\n at a later time to terminate the unresponsive process, resulting in a call\n to OnRenderProcessTerminated. OnRenderProcessResponsive will be called if\n the process becomes responsive after this function is called. This\n functionality depends on the hang monitor which can be disabled by passing\n the `--disable-hang-monitor` command-line flag.\n"]
     pub on_render_process_unresponsive: ::std::option::Option<
         unsafe extern "C" fn(
             self_: *mut _cef_request_handler_t,

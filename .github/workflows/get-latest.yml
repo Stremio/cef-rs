@@ -4,6 +4,13 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
+  push:
+    branches:
+      - dev
+    paths:
+      - get-latest/**
+      - .github/workflows/get-latest.yml
+
 jobs:
   get-latest:
     if: ${{ github.repository_owner == 'tauri-apps' }}
@@ -13,18 +20,28 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Check for updates
+        id: check-updates
+        run: |
+          git config --global user.email "tauri-bot@users.noreply.github.com"
+          git config --global user.name "tauri"
+
+          RESET_REV=$(git rev-parse HEAD)
+          echo "reset-rev=${RESET_REV}" >> "$GITHUB_OUTPUT"
+          cargo run -p get-latest -- -u
+          git reset ${RESET_REV}
 
       - name: Push changes
         id: push-changes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_MESSAGE: ${{ steps.check-updates.outputs.commit-message }}
+          RESET_REV: ${{ steps.check-updates.outputs.reset-rev }}
         run: |
-          cargo run -p get-latest -- -u
-
           git switch -c get-latest
-          RESET_REV=$(git rev-parse HEAD)
-
-          git reset ${RESET_REV}
           git add .
 
           CHANGED=($(git diff --name-only --staged | xargs))
@@ -41,7 +58,7 @@ jobs:
               -F githubRepository=${GITHUB_REPOSITORY} \
               -F branchName=get-latest \
               -F expectedHeadOid=${RESET_REV} \
-              -F 'commitMessage=chore: update CEF version' \
+              -F "commitMessage=${COMMIT_MESSAGE}" \
               -F query=@.github/api/createCommitOnBranch.graphql \
               ${FILES[@]}
 

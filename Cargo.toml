@@ -8,10 +8,11 @@ members = [
     "export-cef-dir",
     "sys",
     "cef",
+    "examples/*",
 ]
 
 [workspace.package]
-version = "138.2.2+138.0.21"
+version = "139.0.1+139.0.17"
 edition = "2021"
 license = "Apache-2.0 OR MIT"
 authors = [
@@ -22,7 +23,8 @@ authors = [
 repository = "https://github.com/tauri-apps/cef-rs"
 
 [workspace.dependencies]
-cef-dll-sys = { version = "138.2.2", path = "sys" }
+cef = { path = "cef" }
+cef-dll-sys = { version = "139.0.1", path = "sys" }
 download-cef = { version = "2.0", path = "download-cef" }
 
 anyhow = "1"
@@ -30,6 +32,8 @@ bindgen = "0.72"
 clap = { version = "4", features = ["derive"] }
 cmake = "0.1.52"
 convert_case = "0.8"
+git-cliff = "2"
+git-cliff-core = "2"
 plist = "1"
 proc-macro2 = "1"
 quote = "1"
