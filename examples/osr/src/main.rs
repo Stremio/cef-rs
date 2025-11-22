@@ -1,4 +1,5 @@
 mod webrender;
+
 use cef::{args::Args, *};
 use std::{cell::RefCell, process::ExitCode, sync::Arc, thread::sleep, time::Duration};
 use wgpu::Backends;
@@ -30,7 +31,12 @@ struct State {
 impl State {
     async fn new(window: Arc<Window>) -> State {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
+            #[cfg(target_os = "windows")]
             backends: Backends::from_comma_list("dx12"),
+            #[cfg(target_os = "macos")]
+            backends: Backends::from_comma_list("metal"),
+            #[cfg(target_os = "linux")]
+            backends: Backends::from_comma_list("vulkan"),
             //flags: wgpu::InstanceFlags::debugging(),
             ..Default::default()
         });
@@ -41,7 +47,13 @@ impl State {
             .await
             .unwrap();
         let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
+            .request_device(&wgpu::DeviceDescriptor {
+                required_limits: wgpu::Limits {
+                    max_non_sampler_bindings: 2048,
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
             .await
             .unwrap();
 
@@ -197,6 +209,7 @@ impl State {
                             load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                             store: wgpu::StoreOp::Store,
                         },
+                        depth_slice: None,
                     })],
                     ..Default::default()
                 });
@@ -242,15 +255,25 @@ impl ApplicationHandler for App {
 
         let state = pollster::block_on(State::new(window.clone()));
         self.state = Some(state);
+        let accelerated_osr = cfg!(all(
+            any(
+                target_os = "macos",
+                target_os = "windows",
+                target_os = "linux"
+            ),
+            feature = "accelerated_osr"
+        ));
         let window_info = WindowInfo {
             windowless_rendering_enabled: true as _,
-            shared_texture_enabled: true as _,
-            external_begin_frame_enabled: true as _,
+            shared_texture_enabled: accelerated_osr as _,
+            external_begin_frame_enabled: accelerated_osr as _,
             ..Default::default()
         };
+
         let device_scale_factor = window.scale_factor();
         let (render_handler, browser_size) = OsrRenderHandler::new(
             self.state.as_ref().unwrap().device.clone(),
+            self.state.as_ref().unwrap().queue.clone(),
             device_scale_factor as _,
             window.inner_size().to_logical(device_scale_factor),
         );
@@ -291,6 +314,7 @@ impl ApplicationHandler for App {
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
+                #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
                 if let Some(host) = self.browser.as_mut().and_then(|b| b.browser.host()) {
                     host.send_external_begin_frame();
                 }
@@ -316,14 +340,14 @@ fn main() -> std::process::ExitCode {
     #[cfg(all(target_os = "windows", debug_assertions))]
     pix::load_winpix_gpu_capturer().unwrap();
 
-    env_logger::init();
-
     #[cfg(target_os = "macos")]
     let _loader = {
         let loader = library_loader::LibraryLoader::new(&std::env::current_exe().unwrap(), false);
         assert!(loader.load());
         loader
     };
+
+    env_logger::init();
 
     let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
 

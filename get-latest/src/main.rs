@@ -13,6 +13,7 @@ use std::{
     io::Write,
     path::PathBuf,
     process::{Command, ExitStatus},
+    sync::OnceLock,
 };
 use toml_edit::{value, DocumentMut};
 
@@ -40,9 +41,18 @@ enum Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+fn default_download_url() -> &'static str {
+    static DEFAULT_DOWNLOAD_URL: OnceLock<String> = OnceLock::new();
+    DEFAULT_DOWNLOAD_URL
+        .get_or_init(|| download_cef::default_download_url())
+        .as_str()
+}
+
 #[derive(Parser)]
 #[command(about, long_about = None)]
 struct Args {
+    #[arg(short, long, default_value = default_download_url())]
+    mirror_url: String,
     #[arg(short, long, default_value = "stable")]
     channel: Channel,
     #[arg(short, long)]
@@ -54,8 +64,9 @@ fn main() -> Result<()> {
 
     let args = Args::parse();
     let channel = args.channel;
+    let url = args.mirror_url.as_str();
 
-    let index = CefIndex::download()?;
+    let index = CefIndex::download_from(url)?;
     let latest_versions: Vec<_> = LINUX_TARGETS
         .iter()
         .chain(MACOS_TARGETS.iter())

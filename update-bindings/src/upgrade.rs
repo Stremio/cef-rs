@@ -18,11 +18,12 @@ const TARGETS: &[&str] = &[
     "arm-unknown-linux-gnueabi",
 ];
 
-pub fn download(target: &str, version: &str) -> PathBuf {
+pub fn download(url: &str, target: &str, version: &str) -> PathBuf {
     assert!(TARGETS.contains(&target), "unsupported target {target}");
 
-    let archive = download_cef::download_target_archive(target, version, dirs::get_out_dir(), true)
-        .expect("download failed");
+    let archive =
+        download_cef::download_target_archive_from(url, target, version, dirs::get_out_dir(), true)
+            .expect("download failed");
 
     download_cef::extract_target_archive(target, &archive, dirs::get_out_dir(), true)
         .expect("extraction failed")
@@ -56,8 +57,12 @@ fn bindgen(target: &str, cef_path: &Path) -> crate::Result<()> {
         .allowlist_type("cef_.*")
         .allowlist_function("cef_.*")
         .allowlist_item("CEF_API_VERSION(_.+)?")
+        .allowlist_item("CEF_VERSION(_.+)?")
+        .allowlist_item("CHROME_VERSION(_.+)?")
         .default_macro_constant_type(bindgen::MacroTypeVariation::Signed)
         .bitfield_enum(".*_mask_t")
+        .bitfield_enum(".*_flags_t")
+        .bitfield_enum("cef_v8_propertyattribute_t")
         .clang_args([
             format!("-I{}", cef_path.display()),
             format!("--target={target}"),

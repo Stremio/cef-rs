@@ -38,6 +38,13 @@ fn default_version() -> &'static str {
         .as_str()
 }
 
+fn default_download_url() -> &'static str {
+    static DEFAULT_DOWNLOAD_URL: OnceLock<String> = OnceLock::new();
+    DEFAULT_DOWNLOAD_URL
+        .get_or_init(|| download_cef::default_download_url())
+        .as_str()
+}
+
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
 struct Args {
@@ -49,6 +56,8 @@ struct Args {
     target: String,
     #[arg(short, long, default_value = default_version())]
     version: String,
+    #[arg(short, long, default_value = default_download_url())]
+    mirror_url: String,
 }
 
 fn main() -> Result<()> {
@@ -57,7 +66,7 @@ fn main() -> Result<()> {
 
     if args.bindgen {
         if args.download {
-            let _ = upgrade::download(target, args.version.as_str());
+            let _ = upgrade::download(args.mirror_url.as_str(), target, args.version.as_str());
         }
 
         upgrade::sys_bindgen(target)?;
