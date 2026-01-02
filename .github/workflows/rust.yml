@@ -23,12 +23,19 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install dependencies
+        run: |
+          ${{ matrix.os == 'ubuntu-latest'
+            && 'sudo apt-get update -q; sudo apt-get install -yq libglib2.0-dev'
+            || 'echo "No additional dependencies."'
+          }}
+
       - name: Check fmt
         run: cargo fmt --check
 
       - name: Cache CEF
         id: cache-cef
-        uses: actions/cache@v4.3.0
+        uses: actions/cache@v5.0.1
         with:
           path: ~/.local/share/cef
           key: cef-${{ matrix.os }}-${{ hashFiles('Cargo.toml') }}

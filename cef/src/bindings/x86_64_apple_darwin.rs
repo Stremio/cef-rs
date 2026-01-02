@@ -4,7 +4,8 @@
     non_camel_case_types,
     unused_variables,
     clippy::not_unsafe_ptr_arg_deref,
-    clippy::too_many_arguments
+    clippy::too_many_arguments,
+    clippy::let_unit_value
 )]
 use crate::rc::{ConvertParam, ConvertReturnValue, Rc, RcImpl, RefGuard, WrapParamRef};
 use cef_dll_sys::*;
@@ -42,6 +43,12 @@ pub type CefString = CefStringUtf16;
 
 /// See [`u32`] for more documentation.
 pub type Color = u32;
+
+/// See [`pid_t`] for more documentation.
+pub type PlatformThreadId = pid_t;
+
+/// See [`pthread_t`] for more documentation.
+pub type PlatformThreadHandle = pthread_t;
 
 /// See [`_cef_string_wide_t`] for more documentation.
 pub use crate::string::CefStringWide;
@@ -1766,358 +1773,6 @@ impl ConvertReturnValue<BaseScoped> for *mut _cef_base_scoped_t {
 impl From<BaseScoped> for *mut _cef_base_scoped_t {
     fn from(value: BaseScoped) -> Self {
         value.get_raw()
-    }
-}
-
-/// See [`_cef_dev_tools_message_observer_t`] for more documentation.
-#[derive(Clone)]
-pub struct DevToolsMessageObserver(RefGuard<_cef_dev_tools_message_observer_t>);
-impl DevToolsMessageObserver {
-    pub fn new<T>(interface: T) -> Self
-    where
-        T: WrapDevToolsMessageObserver,
-    {
-        unsafe {
-            let mut cef_object = std::mem::zeroed();
-            <T as ImplDevToolsMessageObserver>::init_methods(&mut cef_object);
-            let object = RcImpl::new(cef_object, interface);
-            <T as WrapDevToolsMessageObserver>::wrap_rc(&mut (*object).interface, object);
-            let object: *mut _cef_dev_tools_message_observer_t = object.cast();
-            object.wrap_result()
-        }
-    }
-}
-pub trait WrapDevToolsMessageObserver: ImplDevToolsMessageObserver {
-    fn wrap_rc(&mut self, object: *mut RcImpl<_cef_dev_tools_message_observer_t, Self>);
-}
-pub trait ImplDevToolsMessageObserver: Clone + Sized + Rc {
-    #[doc = "See [`_cef_dev_tools_message_observer_t::on_dev_tools_message`] for more documentation."]
-    fn on_dev_tools_message(
-        &self,
-        browser: Option<&mut Browser>,
-        message: Option<&[u8]>,
-    ) -> ::std::os::raw::c_int {
-        Default::default()
-    }
-    #[doc = "See [`_cef_dev_tools_message_observer_t::on_dev_tools_method_result`] for more documentation."]
-    fn on_dev_tools_method_result(
-        &self,
-        browser: Option<&mut Browser>,
-        message_id: ::std::os::raw::c_int,
-        success: ::std::os::raw::c_int,
-        result: Option<&[u8]>,
-    ) {
-    }
-    #[doc = "See [`_cef_dev_tools_message_observer_t::on_dev_tools_event`] for more documentation."]
-    fn on_dev_tools_event(
-        &self,
-        browser: Option<&mut Browser>,
-        method: Option<&CefString>,
-        params: Option<&[u8]>,
-    ) {
-    }
-    #[doc = "See [`_cef_dev_tools_message_observer_t::on_dev_tools_agent_attached`] for more documentation."]
-    fn on_dev_tools_agent_attached(&self, browser: Option<&mut Browser>) {}
-    #[doc = "See [`_cef_dev_tools_message_observer_t::on_dev_tools_agent_detached`] for more documentation."]
-    fn on_dev_tools_agent_detached(&self, browser: Option<&mut Browser>) {}
-    fn init_methods(object: &mut _cef_dev_tools_message_observer_t) {
-        impl_cef_dev_tools_message_observer_t::init_methods::<
-            Self,
-            _cef_dev_tools_message_observer_t,
-        >(object);
-    }
-    fn get_raw(&self) -> *mut _cef_dev_tools_message_observer_t;
-}
-#[doc = "Implement the [`WrapDevToolsMessageObserver`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl DevToolsMessageObserver` block you can override default\nmethods implemented by the [`ImplDevToolsMessageObserver`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_dev_tools_message_observer! {\n    struct MyDevToolsMessageObserver {\n        payload: String,\n    }\n\n    impl DevToolsMessageObserver {\n        // ...\n    }\n}\n\nfn make_my_struct() -> DevToolsMessageObserver {\n    MyDevToolsMessageObserver::new(\"payload\".to_string())\n}\n```"]
-#[macro_export]
-macro_rules ! wrap_dev_tools_message_observer { ($ vis : vis struct $ name : ident ; impl DevToolsMessageObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_dev_tools_message_observer ! { $ vis struct $ name { } impl DevToolsMessageObserver { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DevToolsMessageObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_dev_tools_message_observer_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> DevToolsMessageObserver { DevToolsMessageObserver :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDevToolsMessageObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_dev_tools_message_observer_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDevToolsMessageObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_dev_tools_message_observer_t { self . cef_object . cast () } } } ; }
-mod impl_cef_dev_tools_message_observer_t {
-    use super::*;
-    pub fn init_methods<I: ImplDevToolsMessageObserver, R: Rc>(
-        object: &mut _cef_dev_tools_message_observer_t,
-    ) {
-        object.on_dev_tools_message = Some(on_dev_tools_message::<I, R>);
-        object.on_dev_tools_method_result = Some(on_dev_tools_method_result::<I, R>);
-        object.on_dev_tools_event = Some(on_dev_tools_event::<I, R>);
-        object.on_dev_tools_agent_attached = Some(on_dev_tools_agent_attached::<I, R>);
-        object.on_dev_tools_agent_detached = Some(on_dev_tools_agent_detached::<I, R>);
-    }
-    extern "C" fn on_dev_tools_message<I: ImplDevToolsMessageObserver, R: Rc>(
-        self_: *mut _cef_dev_tools_message_observer_t,
-        browser: *mut _cef_browser_t,
-        message: *const ::std::os::raw::c_void,
-        message_size: usize,
-    ) -> ::std::os::raw::c_int {
-        let (arg_self_, arg_browser, arg_message, arg_message_size) =
-            (self_, browser, message, message_size);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_browser =
-            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser = arg_browser.as_mut();
-        let arg_message = (!arg_message.is_null() && arg_message_size > 0)
-            .then(|| unsafe { std::slice::from_raw_parts(arg_message.cast(), arg_message_size) });
-        ImplDevToolsMessageObserver::on_dev_tools_message(
-            &arg_self_.interface,
-            arg_browser,
-            arg_message,
-        )
-    }
-    extern "C" fn on_dev_tools_method_result<I: ImplDevToolsMessageObserver, R: Rc>(
-        self_: *mut _cef_dev_tools_message_observer_t,
-        browser: *mut _cef_browser_t,
-        message_id: ::std::os::raw::c_int,
-        success: ::std::os::raw::c_int,
-        result: *const ::std::os::raw::c_void,
-        result_size: usize,
-    ) {
-        let (arg_self_, arg_browser, arg_message_id, arg_success, arg_result, arg_result_size) =
-            (self_, browser, message_id, success, result, result_size);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_browser =
-            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser = arg_browser.as_mut();
-        let arg_message_id = arg_message_id.into_raw();
-        let arg_success = arg_success.into_raw();
-        let arg_result = (!arg_result.is_null() && arg_result_size > 0)
-            .then(|| unsafe { std::slice::from_raw_parts(arg_result.cast(), arg_result_size) });
-        ImplDevToolsMessageObserver::on_dev_tools_method_result(
-            &arg_self_.interface,
-            arg_browser,
-            arg_message_id,
-            arg_success,
-            arg_result,
-        )
-    }
-    extern "C" fn on_dev_tools_event<I: ImplDevToolsMessageObserver, R: Rc>(
-        self_: *mut _cef_dev_tools_message_observer_t,
-        browser: *mut _cef_browser_t,
-        method: *const cef_string_t,
-        params: *const ::std::os::raw::c_void,
-        params_size: usize,
-    ) {
-        let (arg_self_, arg_browser, arg_method, arg_params, arg_params_size) =
-            (self_, browser, method, params, params_size);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_browser =
-            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser = arg_browser.as_mut();
-        let arg_method = if arg_method.is_null() {
-            None
-        } else {
-            Some(arg_method.into())
-        };
-        let arg_method = arg_method.as_ref();
-        let arg_params = (!arg_params.is_null() && arg_params_size > 0)
-            .then(|| unsafe { std::slice::from_raw_parts(arg_params.cast(), arg_params_size) });
-        ImplDevToolsMessageObserver::on_dev_tools_event(
-            &arg_self_.interface,
-            arg_browser,
-            arg_method,
-            arg_params,
-        )
-    }
-    extern "C" fn on_dev_tools_agent_attached<I: ImplDevToolsMessageObserver, R: Rc>(
-        self_: *mut _cef_dev_tools_message_observer_t,
-        browser: *mut _cef_browser_t,
-    ) {
-        let (arg_self_, arg_browser) = (self_, browser);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_browser =
-            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser = arg_browser.as_mut();
-        ImplDevToolsMessageObserver::on_dev_tools_agent_attached(&arg_self_.interface, arg_browser)
-    }
-    extern "C" fn on_dev_tools_agent_detached<I: ImplDevToolsMessageObserver, R: Rc>(
-        self_: *mut _cef_dev_tools_message_observer_t,
-        browser: *mut _cef_browser_t,
-    ) {
-        let (arg_self_, arg_browser) = (self_, browser);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_browser =
-            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser = arg_browser.as_mut();
-        ImplDevToolsMessageObserver::on_dev_tools_agent_detached(&arg_self_.interface, arg_browser)
-    }
-}
-impl ImplDevToolsMessageObserver for DevToolsMessageObserver {
-    fn on_dev_tools_message(
-        &self,
-        browser: Option<&mut Browser>,
-        message: Option<&[u8]>,
-    ) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .on_dev_tools_message
-                .map(|f| {
-                    let (arg_browser, arg_message) = (browser, message);
-                    let arg_self_ = self.into_raw();
-                    let arg_browser = arg_browser
-                        .map(|arg| {
-                            arg.add_ref();
-                            ImplBrowser::get_raw(arg)
-                        })
-                        .unwrap_or(std::ptr::null_mut());
-                    let arg_message_size = arg_message
-                        .as_ref()
-                        .map(|arg| arg.len())
-                        .unwrap_or_default();
-                    let arg_message = arg_message
-                        .and_then(|arg| {
-                            if arg.is_empty() {
-                                None
-                            } else {
-                                Some(arg.as_ptr().cast())
-                            }
-                        })
-                        .unwrap_or(std::ptr::null());
-                    let result = f(arg_self_, arg_browser, arg_message, arg_message_size);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn on_dev_tools_method_result(
-        &self,
-        browser: Option<&mut Browser>,
-        message_id: ::std::os::raw::c_int,
-        success: ::std::os::raw::c_int,
-        result: Option<&[u8]>,
-    ) {
-        unsafe {
-            if let Some(f) = self.0.on_dev_tools_method_result {
-                let (arg_browser, arg_message_id, arg_success, arg_result) =
-                    (browser, message_id, success, result);
-                let arg_self_ = self.into_raw();
-                let arg_browser = arg_browser
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplBrowser::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                let arg_result_size = arg_result.as_ref().map(|arg| arg.len()).unwrap_or_default();
-                let arg_result = arg_result
-                    .and_then(|arg| {
-                        if arg.is_empty() {
-                            None
-                        } else {
-                            Some(arg.as_ptr().cast())
-                        }
-                    })
-                    .unwrap_or(std::ptr::null());
-                f(
-                    arg_self_,
-                    arg_browser,
-                    arg_message_id,
-                    arg_success,
-                    arg_result,
-                    arg_result_size,
-                );
-            }
-        }
-    }
-    fn on_dev_tools_event(
-        &self,
-        browser: Option<&mut Browser>,
-        method: Option<&CefString>,
-        params: Option<&[u8]>,
-    ) {
-        unsafe {
-            if let Some(f) = self.0.on_dev_tools_event {
-                let (arg_browser, arg_method, arg_params) = (browser, method, params);
-                let arg_self_ = self.into_raw();
-                let arg_browser = arg_browser
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplBrowser::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                let arg_method = arg_method
-                    .map(|arg| arg.into_raw())
-                    .unwrap_or(std::ptr::null());
-                let arg_params_size = arg_params.as_ref().map(|arg| arg.len()).unwrap_or_default();
-                let arg_params = arg_params
-                    .and_then(|arg| {
-                        if arg.is_empty() {
-                            None
-                        } else {
-                            Some(arg.as_ptr().cast())
-                        }
-                    })
-                    .unwrap_or(std::ptr::null());
-                f(
-                    arg_self_,
-                    arg_browser,
-                    arg_method,
-                    arg_params,
-                    arg_params_size,
-                );
-            }
-        }
-    }
-    fn on_dev_tools_agent_attached(&self, browser: Option<&mut Browser>) {
-        unsafe {
-            if let Some(f) = self.0.on_dev_tools_agent_attached {
-                let arg_browser = browser;
-                let arg_self_ = self.into_raw();
-                let arg_browser = arg_browser
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplBrowser::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                f(arg_self_, arg_browser);
-            }
-        }
-    }
-    fn on_dev_tools_agent_detached(&self, browser: Option<&mut Browser>) {
-        unsafe {
-            if let Some(f) = self.0.on_dev_tools_agent_detached {
-                let arg_browser = browser;
-                let arg_self_ = self.into_raw();
-                let arg_browser = arg_browser
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplBrowser::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                f(arg_self_, arg_browser);
-            }
-        }
-    }
-    fn get_raw(&self) -> *mut _cef_dev_tools_message_observer_t {
-        unsafe { RefGuard::into_raw(&self.0) }
-    }
-}
-impl Rc for _cef_dev_tools_message_observer_t {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.base.as_base()
-    }
-}
-impl Rc for DevToolsMessageObserver {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.0.as_base()
-    }
-}
-impl ConvertParam<*mut _cef_dev_tools_message_observer_t> for &DevToolsMessageObserver {
-    fn into_raw(self) -> *mut _cef_dev_tools_message_observer_t {
-        ImplDevToolsMessageObserver::get_raw(self)
-    }
-}
-impl ConvertParam<*mut _cef_dev_tools_message_observer_t> for &mut DevToolsMessageObserver {
-    fn into_raw(self) -> *mut _cef_dev_tools_message_observer_t {
-        ImplDevToolsMessageObserver::get_raw(self)
-    }
-}
-impl ConvertReturnValue<DevToolsMessageObserver> for *mut _cef_dev_tools_message_observer_t {
-    fn wrap_result(self) -> DevToolsMessageObserver {
-        DevToolsMessageObserver(unsafe { RefGuard::from_raw(self) })
-    }
-}
-impl From<DevToolsMessageObserver> for *mut _cef_dev_tools_message_observer_t {
-    fn from(value: DevToolsMessageObserver) -> Self {
-        let object = ImplDevToolsMessageObserver::get_raw(&value);
-        std::mem::forget(value);
-        object
     }
 }
 
@@ -3896,6 +3551,493 @@ impl From<ListValue> for *mut _cef_list_value_t {
     }
 }
 
+/// See [`_cef_accessibility_handler_t`] for more documentation.
+#[derive(Clone)]
+pub struct AccessibilityHandler(RefGuard<_cef_accessibility_handler_t>);
+impl AccessibilityHandler {
+    pub fn new<T>(interface: T) -> Self
+    where
+        T: WrapAccessibilityHandler,
+    {
+        unsafe {
+            let mut cef_object = std::mem::zeroed();
+            <T as ImplAccessibilityHandler>::init_methods(&mut cef_object);
+            let object = RcImpl::new(cef_object, interface);
+            <T as WrapAccessibilityHandler>::wrap_rc(&mut (*object).interface, object);
+            let object: *mut _cef_accessibility_handler_t = object.cast();
+            object.wrap_result()
+        }
+    }
+}
+pub trait WrapAccessibilityHandler: ImplAccessibilityHandler {
+    fn wrap_rc(&mut self, object: *mut RcImpl<_cef_accessibility_handler_t, Self>);
+}
+pub trait ImplAccessibilityHandler: Clone + Sized + Rc {
+    #[doc = "See [`_cef_accessibility_handler_t::on_accessibility_tree_change`] for more documentation."]
+    fn on_accessibility_tree_change(&self, value: Option<&mut Value>) {}
+    #[doc = "See [`_cef_accessibility_handler_t::on_accessibility_location_change`] for more documentation."]
+    fn on_accessibility_location_change(&self, value: Option<&mut Value>) {}
+    fn init_methods(object: &mut _cef_accessibility_handler_t) {
+        impl_cef_accessibility_handler_t::init_methods::<Self, _cef_accessibility_handler_t>(
+            object,
+        );
+    }
+    fn get_raw(&self) -> *mut _cef_accessibility_handler_t;
+}
+#[doc = "Implement the [`WrapAccessibilityHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl AccessibilityHandler` block you can override default\nmethods implemented by the [`ImplAccessibilityHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_accessibility_handler! {\n    struct MyAccessibilityHandler {\n        payload: String,\n    }\n\n    impl AccessibilityHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> AccessibilityHandler {\n    MyAccessibilityHandler::new(\"payload\".to_string())\n}\n```"]
+#[macro_export]
+macro_rules ! wrap_accessibility_handler { ($ vis : vis struct $ name : ident ; impl AccessibilityHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_accessibility_handler ! { $ vis struct $ name { } impl AccessibilityHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl AccessibilityHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_accessibility_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> AccessibilityHandler { AccessibilityHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapAccessibilityHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_accessibility_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplAccessibilityHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_accessibility_handler_t { self . cef_object . cast () } } } ; }
+mod impl_cef_accessibility_handler_t {
+    use super::*;
+    pub fn init_methods<I: ImplAccessibilityHandler, R: Rc>(
+        object: &mut _cef_accessibility_handler_t,
+    ) {
+        object.on_accessibility_tree_change = Some(on_accessibility_tree_change::<I, R>);
+        object.on_accessibility_location_change = Some(on_accessibility_location_change::<I, R>);
+    }
+    extern "C" fn on_accessibility_tree_change<I: ImplAccessibilityHandler, R: Rc>(
+        self_: *mut _cef_accessibility_handler_t,
+        value: *mut _cef_value_t,
+    ) {
+        let (arg_self_, arg_value) = (self_, value);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_value =
+            unsafe { arg_value.as_mut() }.map(|arg| Value(unsafe { RefGuard::from_raw(arg) }));
+        let arg_value = arg_value.as_mut();
+        ImplAccessibilityHandler::on_accessibility_tree_change(&arg_self_.interface, arg_value)
+    }
+    extern "C" fn on_accessibility_location_change<I: ImplAccessibilityHandler, R: Rc>(
+        self_: *mut _cef_accessibility_handler_t,
+        value: *mut _cef_value_t,
+    ) {
+        let (arg_self_, arg_value) = (self_, value);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_value =
+            unsafe { arg_value.as_mut() }.map(|arg| Value(unsafe { RefGuard::from_raw(arg) }));
+        let arg_value = arg_value.as_mut();
+        ImplAccessibilityHandler::on_accessibility_location_change(&arg_self_.interface, arg_value)
+    }
+}
+impl ImplAccessibilityHandler for AccessibilityHandler {
+    fn on_accessibility_tree_change(&self, value: Option<&mut Value>) {
+        unsafe {
+            if let Some(f) = self.0.on_accessibility_tree_change {
+                let arg_value = value;
+                let arg_self_ = self.into_raw();
+                let arg_value = arg_value
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplValue::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_value);
+            }
+        }
+    }
+    fn on_accessibility_location_change(&self, value: Option<&mut Value>) {
+        unsafe {
+            if let Some(f) = self.0.on_accessibility_location_change {
+                let arg_value = value;
+                let arg_self_ = self.into_raw();
+                let arg_value = arg_value
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplValue::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_value);
+            }
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_accessibility_handler_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_accessibility_handler_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for AccessibilityHandler {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_accessibility_handler_t> for &AccessibilityHandler {
+    fn into_raw(self) -> *mut _cef_accessibility_handler_t {
+        ImplAccessibilityHandler::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_accessibility_handler_t> for &mut AccessibilityHandler {
+    fn into_raw(self) -> *mut _cef_accessibility_handler_t {
+        ImplAccessibilityHandler::get_raw(self)
+    }
+}
+impl ConvertReturnValue<AccessibilityHandler> for *mut _cef_accessibility_handler_t {
+    fn wrap_result(self) -> AccessibilityHandler {
+        AccessibilityHandler(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<AccessibilityHandler> for *mut _cef_accessibility_handler_t {
+    fn from(value: AccessibilityHandler) -> Self {
+        let object = ImplAccessibilityHandler::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_dev_tools_message_observer_t`] for more documentation.
+#[derive(Clone)]
+pub struct DevToolsMessageObserver(RefGuard<_cef_dev_tools_message_observer_t>);
+impl DevToolsMessageObserver {
+    pub fn new<T>(interface: T) -> Self
+    where
+        T: WrapDevToolsMessageObserver,
+    {
+        unsafe {
+            let mut cef_object = std::mem::zeroed();
+            <T as ImplDevToolsMessageObserver>::init_methods(&mut cef_object);
+            let object = RcImpl::new(cef_object, interface);
+            <T as WrapDevToolsMessageObserver>::wrap_rc(&mut (*object).interface, object);
+            let object: *mut _cef_dev_tools_message_observer_t = object.cast();
+            object.wrap_result()
+        }
+    }
+}
+pub trait WrapDevToolsMessageObserver: ImplDevToolsMessageObserver {
+    fn wrap_rc(&mut self, object: *mut RcImpl<_cef_dev_tools_message_observer_t, Self>);
+}
+pub trait ImplDevToolsMessageObserver: Clone + Sized + Rc {
+    #[doc = "See [`_cef_dev_tools_message_observer_t::on_dev_tools_message`] for more documentation."]
+    fn on_dev_tools_message(
+        &self,
+        browser: Option<&mut Browser>,
+        message: Option<&[u8]>,
+    ) -> ::std::os::raw::c_int {
+        Default::default()
+    }
+    #[doc = "See [`_cef_dev_tools_message_observer_t::on_dev_tools_method_result`] for more documentation."]
+    fn on_dev_tools_method_result(
+        &self,
+        browser: Option<&mut Browser>,
+        message_id: ::std::os::raw::c_int,
+        success: ::std::os::raw::c_int,
+        result: Option<&[u8]>,
+    ) {
+    }
+    #[doc = "See [`_cef_dev_tools_message_observer_t::on_dev_tools_event`] for more documentation."]
+    fn on_dev_tools_event(
+        &self,
+        browser: Option<&mut Browser>,
+        method: Option<&CefString>,
+        params: Option<&[u8]>,
+    ) {
+    }
+    #[doc = "See [`_cef_dev_tools_message_observer_t::on_dev_tools_agent_attached`] for more documentation."]
+    fn on_dev_tools_agent_attached(&self, browser: Option<&mut Browser>) {}
+    #[doc = "See [`_cef_dev_tools_message_observer_t::on_dev_tools_agent_detached`] for more documentation."]
+    fn on_dev_tools_agent_detached(&self, browser: Option<&mut Browser>) {}
+    fn init_methods(object: &mut _cef_dev_tools_message_observer_t) {
+        impl_cef_dev_tools_message_observer_t::init_methods::<
+            Self,
+            _cef_dev_tools_message_observer_t,
+        >(object);
+    }
+    fn get_raw(&self) -> *mut _cef_dev_tools_message_observer_t;
+}
+#[doc = "Implement the [`WrapDevToolsMessageObserver`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl DevToolsMessageObserver` block you can override default\nmethods implemented by the [`ImplDevToolsMessageObserver`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_dev_tools_message_observer! {\n    struct MyDevToolsMessageObserver {\n        payload: String,\n    }\n\n    impl DevToolsMessageObserver {\n        // ...\n    }\n}\n\nfn make_my_struct() -> DevToolsMessageObserver {\n    MyDevToolsMessageObserver::new(\"payload\".to_string())\n}\n```"]
+#[macro_export]
+macro_rules ! wrap_dev_tools_message_observer { ($ vis : vis struct $ name : ident ; impl DevToolsMessageObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_dev_tools_message_observer ! { $ vis struct $ name { } impl DevToolsMessageObserver { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DevToolsMessageObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_dev_tools_message_observer_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> DevToolsMessageObserver { DevToolsMessageObserver :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDevToolsMessageObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_dev_tools_message_observer_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDevToolsMessageObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_dev_tools_message_observer_t { self . cef_object . cast () } } } ; }
+mod impl_cef_dev_tools_message_observer_t {
+    use super::*;
+    pub fn init_methods<I: ImplDevToolsMessageObserver, R: Rc>(
+        object: &mut _cef_dev_tools_message_observer_t,
+    ) {
+        object.on_dev_tools_message = Some(on_dev_tools_message::<I, R>);
+        object.on_dev_tools_method_result = Some(on_dev_tools_method_result::<I, R>);
+        object.on_dev_tools_event = Some(on_dev_tools_event::<I, R>);
+        object.on_dev_tools_agent_attached = Some(on_dev_tools_agent_attached::<I, R>);
+        object.on_dev_tools_agent_detached = Some(on_dev_tools_agent_detached::<I, R>);
+    }
+    extern "C" fn on_dev_tools_message<I: ImplDevToolsMessageObserver, R: Rc>(
+        self_: *mut _cef_dev_tools_message_observer_t,
+        browser: *mut _cef_browser_t,
+        message: *const ::std::os::raw::c_void,
+        message_size: usize,
+    ) -> ::std::os::raw::c_int {
+        let (arg_self_, arg_browser, arg_message, arg_message_size) =
+            (self_, browser, message, message_size);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser =
+            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser = arg_browser.as_mut();
+        let arg_message = (!arg_message.is_null() && arg_message_size > 0)
+            .then(|| unsafe { std::slice::from_raw_parts(arg_message.cast(), arg_message_size) });
+        ImplDevToolsMessageObserver::on_dev_tools_message(
+            &arg_self_.interface,
+            arg_browser,
+            arg_message,
+        )
+    }
+    extern "C" fn on_dev_tools_method_result<I: ImplDevToolsMessageObserver, R: Rc>(
+        self_: *mut _cef_dev_tools_message_observer_t,
+        browser: *mut _cef_browser_t,
+        message_id: ::std::os::raw::c_int,
+        success: ::std::os::raw::c_int,
+        result: *const ::std::os::raw::c_void,
+        result_size: usize,
+    ) {
+        let (arg_self_, arg_browser, arg_message_id, arg_success, arg_result, arg_result_size) =
+            (self_, browser, message_id, success, result, result_size);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser =
+            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser = arg_browser.as_mut();
+        let arg_message_id = arg_message_id.into_raw();
+        let arg_success = arg_success.into_raw();
+        let arg_result = (!arg_result.is_null() && arg_result_size > 0)
+            .then(|| unsafe { std::slice::from_raw_parts(arg_result.cast(), arg_result_size) });
+        ImplDevToolsMessageObserver::on_dev_tools_method_result(
+            &arg_self_.interface,
+            arg_browser,
+            arg_message_id,
+            arg_success,
+            arg_result,
+        )
+    }
+    extern "C" fn on_dev_tools_event<I: ImplDevToolsMessageObserver, R: Rc>(
+        self_: *mut _cef_dev_tools_message_observer_t,
+        browser: *mut _cef_browser_t,
+        method: *const cef_string_t,
+        params: *const ::std::os::raw::c_void,
+        params_size: usize,
+    ) {
+        let (arg_self_, arg_browser, arg_method, arg_params, arg_params_size) =
+            (self_, browser, method, params, params_size);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser =
+            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser = arg_browser.as_mut();
+        let arg_method = if arg_method.is_null() {
+            None
+        } else {
+            Some(arg_method.into())
+        };
+        let arg_method = arg_method.as_ref();
+        let arg_params = (!arg_params.is_null() && arg_params_size > 0)
+            .then(|| unsafe { std::slice::from_raw_parts(arg_params.cast(), arg_params_size) });
+        ImplDevToolsMessageObserver::on_dev_tools_event(
+            &arg_self_.interface,
+            arg_browser,
+            arg_method,
+            arg_params,
+        )
+    }
+    extern "C" fn on_dev_tools_agent_attached<I: ImplDevToolsMessageObserver, R: Rc>(
+        self_: *mut _cef_dev_tools_message_observer_t,
+        browser: *mut _cef_browser_t,
+    ) {
+        let (arg_self_, arg_browser) = (self_, browser);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser =
+            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser = arg_browser.as_mut();
+        ImplDevToolsMessageObserver::on_dev_tools_agent_attached(&arg_self_.interface, arg_browser)
+    }
+    extern "C" fn on_dev_tools_agent_detached<I: ImplDevToolsMessageObserver, R: Rc>(
+        self_: *mut _cef_dev_tools_message_observer_t,
+        browser: *mut _cef_browser_t,
+    ) {
+        let (arg_self_, arg_browser) = (self_, browser);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser =
+            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser = arg_browser.as_mut();
+        ImplDevToolsMessageObserver::on_dev_tools_agent_detached(&arg_self_.interface, arg_browser)
+    }
+}
+impl ImplDevToolsMessageObserver for DevToolsMessageObserver {
+    fn on_dev_tools_message(
+        &self,
+        browser: Option<&mut Browser>,
+        message: Option<&[u8]>,
+    ) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .on_dev_tools_message
+                .map(|f| {
+                    let (arg_browser, arg_message) = (browser, message);
+                    let arg_self_ = self.into_raw();
+                    let arg_browser = arg_browser
+                        .map(|arg| {
+                            arg.add_ref();
+                            ImplBrowser::get_raw(arg)
+                        })
+                        .unwrap_or(std::ptr::null_mut());
+                    let arg_message_size = arg_message
+                        .as_ref()
+                        .map(|arg| arg.len())
+                        .unwrap_or_default();
+                    let arg_message = arg_message
+                        .and_then(|arg| {
+                            if arg.is_empty() {
+                                None
+                            } else {
+                                Some(arg.as_ptr().cast())
+                            }
+                        })
+                        .unwrap_or(std::ptr::null());
+                    let result = f(arg_self_, arg_browser, arg_message, arg_message_size);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn on_dev_tools_method_result(
+        &self,
+        browser: Option<&mut Browser>,
+        message_id: ::std::os::raw::c_int,
+        success: ::std::os::raw::c_int,
+        result: Option<&[u8]>,
+    ) {
+        unsafe {
+            if let Some(f) = self.0.on_dev_tools_method_result {
+                let (arg_browser, arg_message_id, arg_success, arg_result) =
+                    (browser, message_id, success, result);
+                let arg_self_ = self.into_raw();
+                let arg_browser = arg_browser
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplBrowser::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                let arg_result_size = arg_result.as_ref().map(|arg| arg.len()).unwrap_or_default();
+                let arg_result = arg_result
+                    .and_then(|arg| {
+                        if arg.is_empty() {
+                            None
+                        } else {
+                            Some(arg.as_ptr().cast())
+                        }
+                    })
+                    .unwrap_or(std::ptr::null());
+                f(
+                    arg_self_,
+                    arg_browser,
+                    arg_message_id,
+                    arg_success,
+                    arg_result,
+                    arg_result_size,
+                );
+            }
+        }
+    }
+    fn on_dev_tools_event(
+        &self,
+        browser: Option<&mut Browser>,
+        method: Option<&CefString>,
+        params: Option<&[u8]>,
+    ) {
+        unsafe {
+            if let Some(f) = self.0.on_dev_tools_event {
+                let (arg_browser, arg_method, arg_params) = (browser, method, params);
+                let arg_self_ = self.into_raw();
+                let arg_browser = arg_browser
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplBrowser::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                let arg_method = arg_method
+                    .map(|arg| arg.into_raw())
+                    .unwrap_or(std::ptr::null());
+                let arg_params_size = arg_params.as_ref().map(|arg| arg.len()).unwrap_or_default();
+                let arg_params = arg_params
+                    .and_then(|arg| {
+                        if arg.is_empty() {
+                            None
+                        } else {
+                            Some(arg.as_ptr().cast())
+                        }
+                    })
+                    .unwrap_or(std::ptr::null());
+                f(
+                    arg_self_,
+                    arg_browser,
+                    arg_method,
+                    arg_params,
+                    arg_params_size,
+                );
+            }
+        }
+    }
+    fn on_dev_tools_agent_attached(&self, browser: Option<&mut Browser>) {
+        unsafe {
+            if let Some(f) = self.0.on_dev_tools_agent_attached {
+                let arg_browser = browser;
+                let arg_self_ = self.into_raw();
+                let arg_browser = arg_browser
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplBrowser::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_browser);
+            }
+        }
+    }
+    fn on_dev_tools_agent_detached(&self, browser: Option<&mut Browser>) {
+        unsafe {
+            if let Some(f) = self.0.on_dev_tools_agent_detached {
+                let arg_browser = browser;
+                let arg_self_ = self.into_raw();
+                let arg_browser = arg_browser
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplBrowser::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_browser);
+            }
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_dev_tools_message_observer_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_dev_tools_message_observer_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for DevToolsMessageObserver {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_dev_tools_message_observer_t> for &DevToolsMessageObserver {
+    fn into_raw(self) -> *mut _cef_dev_tools_message_observer_t {
+        ImplDevToolsMessageObserver::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_dev_tools_message_observer_t> for &mut DevToolsMessageObserver {
+    fn into_raw(self) -> *mut _cef_dev_tools_message_observer_t {
+        ImplDevToolsMessageObserver::get_raw(self)
+    }
+}
+impl ConvertReturnValue<DevToolsMessageObserver> for *mut _cef_dev_tools_message_observer_t {
+    fn wrap_result(self) -> DevToolsMessageObserver {
+        DevToolsMessageObserver(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<DevToolsMessageObserver> for *mut _cef_dev_tools_message_observer_t {
+    fn from(value: DevToolsMessageObserver) -> Self {
+        let object = ImplDevToolsMessageObserver::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
 /// See [`_cef_image_t`] for more documentation.
 #[derive(Clone)]
 pub struct Image(RefGuard<_cef_image_t>);
@@ -4411,7 +4553,7 @@ pub trait ImplReadHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapReadHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl ReadHandler` block you can override default\nmethods implemented by the [`ImplReadHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_read_handler! {\n    struct MyReadHandler {\n        payload: String,\n    }\n\n    impl ReadHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> ReadHandler {\n    MyReadHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_read_handler { ($ vis : vis struct $ name : ident ; impl ReadHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_read_handler ! { $ vis struct $ name { } impl ReadHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ReadHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_read_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> ReadHandler { ReadHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapReadHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_read_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplReadHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_read_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_read_handler { ($ vis : vis struct $ name : ident ; impl ReadHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_read_handler ! { $ vis struct $ name { } impl ReadHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ReadHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_read_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> ReadHandler { ReadHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapReadHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_read_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplReadHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_read_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_read_handler_t {
     use super::*;
     pub fn init_methods<I: ImplReadHandler, R: Rc>(object: &mut _cef_read_handler_t) {
@@ -4732,7 +4874,7 @@ pub trait ImplWriteHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapWriteHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl WriteHandler` block you can override default\nmethods implemented by the [`ImplWriteHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_write_handler! {\n    struct MyWriteHandler {\n        payload: String,\n    }\n\n    impl WriteHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> WriteHandler {\n    MyWriteHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_write_handler { ($ vis : vis struct $ name : ident ; impl WriteHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_write_handler ! { $ vis struct $ name { } impl WriteHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl WriteHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_write_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> WriteHandler { WriteHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapWriteHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_write_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplWriteHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_write_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_write_handler { ($ vis : vis struct $ name : ident ; impl WriteHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_write_handler ! { $ vis struct $ name { } impl WriteHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl WriteHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_write_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> WriteHandler { WriteHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapWriteHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_write_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplWriteHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_write_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_write_handler_t {
     use super::*;
     pub fn init_methods<I: ImplWriteHandler, R: Rc>(object: &mut _cef_write_handler_t) {
@@ -5475,7 +5617,7 @@ pub trait ImplDomvisitor: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapDomvisitor`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl Domvisitor` block you can override default\nmethods implemented by the [`ImplDomvisitor`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_domvisitor! {\n    struct MyDomvisitor {\n        payload: String,\n    }\n\n    impl Domvisitor {\n        // ...\n    }\n}\n\nfn make_my_struct() -> Domvisitor {\n    MyDomvisitor::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_domvisitor { ($ vis : vis struct $ name : ident ; impl Domvisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_domvisitor ! { $ vis struct $ name { } impl Domvisitor { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl Domvisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_domvisitor_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> Domvisitor { Domvisitor :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDomvisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_domvisitor_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDomvisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_domvisitor_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_domvisitor { ($ vis : vis struct $ name : ident ; impl Domvisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_domvisitor ! { $ vis struct $ name { } impl Domvisitor { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl Domvisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_domvisitor_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> Domvisitor { Domvisitor :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDomvisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_domvisitor_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDomvisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_domvisitor_t { self . cef_object . cast () } } } ; }
 mod impl_cef_domvisitor_t {
     use super::*;
     pub fn init_methods<I: ImplDomvisitor, R: Rc>(object: &mut _cef_domvisitor_t) {
@@ -7280,7 +7422,7 @@ pub trait ImplCefStringVisitor: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapCefStringVisitor`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl CefStringVisitor` block you can override default\nmethods implemented by the [`ImplCefStringVisitor`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_string_visitor! {\n    struct MyCefStringVisitor {\n        payload: String,\n    }\n\n    impl CefStringVisitor {\n        // ...\n    }\n}\n\nfn make_my_struct() -> CefStringVisitor {\n    MyCefStringVisitor::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_string_visitor { ($ vis : vis struct $ name : ident ; impl CefStringVisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_string_visitor ! { $ vis struct $ name { } impl CefStringVisitor { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl CefStringVisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_string_visitor_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> CefStringVisitor { CefStringVisitor :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapCefStringVisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_string_visitor_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplCefStringVisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_string_visitor_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_string_visitor { ($ vis : vis struct $ name : ident ; impl CefStringVisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_string_visitor ! { $ vis struct $ name { } impl CefStringVisitor { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl CefStringVisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_string_visitor_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> CefStringVisitor { CefStringVisitor :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapCefStringVisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_string_visitor_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplCefStringVisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_string_visitor_t { self . cef_object . cast () } } } ; }
 mod impl_cef_string_visitor_t {
     use super::*;
     pub fn init_methods<I: ImplCefStringVisitor, R: Rc>(object: &mut _cef_string_visitor_t) {
@@ -8652,7 +8794,7 @@ pub trait ImplCompletionCallback: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapCompletionCallback`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl CompletionCallback` block you can override default\nmethods implemented by the [`ImplCompletionCallback`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_completion_callback! {\n    struct MyCompletionCallback {\n        payload: String,\n    }\n\n    impl CompletionCallback {\n        // ...\n    }\n}\n\nfn make_my_struct() -> CompletionCallback {\n    MyCompletionCallback::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_completion_callback { ($ vis : vis struct $ name : ident ; impl CompletionCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_completion_callback ! { $ vis struct $ name { } impl CompletionCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl CompletionCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_completion_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> CompletionCallback { CompletionCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapCompletionCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_completion_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplCompletionCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_completion_callback_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_completion_callback { ($ vis : vis struct $ name : ident ; impl CompletionCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_completion_callback ! { $ vis struct $ name { } impl CompletionCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl CompletionCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_completion_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> CompletionCallback { CompletionCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapCompletionCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_completion_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplCompletionCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_completion_callback_t { self . cef_object . cast () } } } ; }
 mod impl_cef_completion_callback_t {
     use super::*;
     pub fn init_methods<I: ImplCompletionCallback, R: Rc>(object: &mut _cef_completion_callback_t) {
@@ -8948,7 +9090,7 @@ pub trait ImplCookieVisitor: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapCookieVisitor`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl CookieVisitor` block you can override default\nmethods implemented by the [`ImplCookieVisitor`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_cookie_visitor! {\n    struct MyCookieVisitor {\n        payload: String,\n    }\n\n    impl CookieVisitor {\n        // ...\n    }\n}\n\nfn make_my_struct() -> CookieVisitor {\n    MyCookieVisitor::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_cookie_visitor { ($ vis : vis struct $ name : ident ; impl CookieVisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_cookie_visitor ! { $ vis struct $ name { } impl CookieVisitor { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl CookieVisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_cookie_visitor_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> CookieVisitor { CookieVisitor :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapCookieVisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_cookie_visitor_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplCookieVisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_cookie_visitor_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_cookie_visitor { ($ vis : vis struct $ name : ident ; impl CookieVisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_cookie_visitor ! { $ vis struct $ name { } impl CookieVisitor { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl CookieVisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_cookie_visitor_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> CookieVisitor { CookieVisitor :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapCookieVisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_cookie_visitor_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplCookieVisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_cookie_visitor_t { self . cef_object . cast () } } } ; }
 mod impl_cef_cookie_visitor_t {
     use super::*;
     pub fn init_methods<I: ImplCookieVisitor, R: Rc>(object: &mut _cef_cookie_visitor_t) {
@@ -9092,7 +9234,7 @@ pub trait ImplSetCookieCallback: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapSetCookieCallback`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl SetCookieCallback` block you can override default\nmethods implemented by the [`ImplSetCookieCallback`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_set_cookie_callback! {\n    struct MySetCookieCallback {\n        payload: String,\n    }\n\n    impl SetCookieCallback {\n        // ...\n    }\n}\n\nfn make_my_struct() -> SetCookieCallback {\n    MySetCookieCallback::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_set_cookie_callback { ($ vis : vis struct $ name : ident ; impl SetCookieCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_set_cookie_callback ! { $ vis struct $ name { } impl SetCookieCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl SetCookieCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_set_cookie_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> SetCookieCallback { SetCookieCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapSetCookieCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_set_cookie_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplSetCookieCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_set_cookie_callback_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_set_cookie_callback { ($ vis : vis struct $ name : ident ; impl SetCookieCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_set_cookie_callback ! { $ vis struct $ name { } impl SetCookieCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl SetCookieCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_set_cookie_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> SetCookieCallback { SetCookieCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapSetCookieCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_set_cookie_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplSetCookieCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_set_cookie_callback_t { self . cef_object . cast () } } } ; }
 mod impl_cef_set_cookie_callback_t {
     use super::*;
     pub fn init_methods<I: ImplSetCookieCallback, R: Rc>(object: &mut _cef_set_cookie_callback_t) {
@@ -9188,7 +9330,7 @@ pub trait ImplDeleteCookiesCallback: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapDeleteCookiesCallback`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl DeleteCookiesCallback` block you can override default\nmethods implemented by the [`ImplDeleteCookiesCallback`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_delete_cookies_callback! {\n    struct MyDeleteCookiesCallback {\n        payload: String,\n    }\n\n    impl DeleteCookiesCallback {\n        // ...\n    }\n}\n\nfn make_my_struct() -> DeleteCookiesCallback {\n    MyDeleteCookiesCallback::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_delete_cookies_callback { ($ vis : vis struct $ name : ident ; impl DeleteCookiesCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_delete_cookies_callback ! { $ vis struct $ name { } impl DeleteCookiesCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DeleteCookiesCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_delete_cookies_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> DeleteCookiesCallback { DeleteCookiesCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDeleteCookiesCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_delete_cookies_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDeleteCookiesCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_delete_cookies_callback_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_delete_cookies_callback { ($ vis : vis struct $ name : ident ; impl DeleteCookiesCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_delete_cookies_callback ! { $ vis struct $ name { } impl DeleteCookiesCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DeleteCookiesCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_delete_cookies_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> DeleteCookiesCallback { DeleteCookiesCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDeleteCookiesCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_delete_cookies_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDeleteCookiesCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_delete_cookies_callback_t { self . cef_object . cast () } } } ; }
 mod impl_cef_delete_cookies_callback_t {
     use super::*;
     pub fn init_methods<I: ImplDeleteCookiesCallback, R: Rc>(
@@ -9445,7 +9587,7 @@ pub trait ImplMediaObserver: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapMediaObserver`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl MediaObserver` block you can override default\nmethods implemented by the [`ImplMediaObserver`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_media_observer! {\n    struct MyMediaObserver {\n        payload: String,\n    }\n\n    impl MediaObserver {\n        // ...\n    }\n}\n\nfn make_my_struct() -> MediaObserver {\n    MyMediaObserver::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_media_observer { ($ vis : vis struct $ name : ident ; impl MediaObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_media_observer ! { $ vis struct $ name { } impl MediaObserver { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl MediaObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_media_observer_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> MediaObserver { MediaObserver :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapMediaObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_media_observer_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplMediaObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_media_observer_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_media_observer { ($ vis : vis struct $ name : ident ; impl MediaObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_media_observer ! { $ vis struct $ name { } impl MediaObserver { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl MediaObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_media_observer_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> MediaObserver { MediaObserver :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapMediaObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_media_observer_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplMediaObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_media_observer_t { self . cef_object . cast () } } } ; }
 mod impl_cef_media_observer_t {
     use super::*;
     pub fn init_methods<I: ImplMediaObserver, R: Rc>(object: &mut _cef_media_observer_t) {
@@ -9844,7 +9986,7 @@ pub trait ImplMediaRouteCreateCallback: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapMediaRouteCreateCallback`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl MediaRouteCreateCallback` block you can override default\nmethods implemented by the [`ImplMediaRouteCreateCallback`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_media_route_create_callback! {\n    struct MyMediaRouteCreateCallback {\n        payload: String,\n    }\n\n    impl MediaRouteCreateCallback {\n        // ...\n    }\n}\n\nfn make_my_struct() -> MediaRouteCreateCallback {\n    MyMediaRouteCreateCallback::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_media_route_create_callback { ($ vis : vis struct $ name : ident ; impl MediaRouteCreateCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_media_route_create_callback ! { $ vis struct $ name { } impl MediaRouteCreateCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl MediaRouteCreateCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_media_route_create_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> MediaRouteCreateCallback { MediaRouteCreateCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapMediaRouteCreateCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_media_route_create_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplMediaRouteCreateCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_media_route_create_callback_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_media_route_create_callback { ($ vis : vis struct $ name : ident ; impl MediaRouteCreateCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_media_route_create_callback ! { $ vis struct $ name { } impl MediaRouteCreateCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl MediaRouteCreateCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_media_route_create_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> MediaRouteCreateCallback { MediaRouteCreateCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapMediaRouteCreateCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_media_route_create_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplMediaRouteCreateCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_media_route_create_callback_t { self . cef_object . cast () } } } ; }
 mod impl_cef_media_route_create_callback_t {
     use super::*;
     pub fn init_methods<I: ImplMediaRouteCreateCallback, R: Rc>(
@@ -10126,7 +10268,7 @@ pub trait ImplMediaSinkDeviceInfoCallback: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapMediaSinkDeviceInfoCallback`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl MediaSinkDeviceInfoCallback` block you can override default\nmethods implemented by the [`ImplMediaSinkDeviceInfoCallback`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_media_sink_device_info_callback! {\n    struct MyMediaSinkDeviceInfoCallback {\n        payload: String,\n    }\n\n    impl MediaSinkDeviceInfoCallback {\n        // ...\n    }\n}\n\nfn make_my_struct() -> MediaSinkDeviceInfoCallback {\n    MyMediaSinkDeviceInfoCallback::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_media_sink_device_info_callback { ($ vis : vis struct $ name : ident ; impl MediaSinkDeviceInfoCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_media_sink_device_info_callback ! { $ vis struct $ name { } impl MediaSinkDeviceInfoCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl MediaSinkDeviceInfoCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_media_sink_device_info_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> MediaSinkDeviceInfoCallback { MediaSinkDeviceInfoCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapMediaSinkDeviceInfoCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_media_sink_device_info_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplMediaSinkDeviceInfoCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_media_sink_device_info_callback_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_media_sink_device_info_callback { ($ vis : vis struct $ name : ident ; impl MediaSinkDeviceInfoCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_media_sink_device_info_callback ! { $ vis struct $ name { } impl MediaSinkDeviceInfoCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl MediaSinkDeviceInfoCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_media_sink_device_info_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> MediaSinkDeviceInfoCallback { MediaSinkDeviceInfoCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapMediaSinkDeviceInfoCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_media_sink_device_info_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplMediaSinkDeviceInfoCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_media_sink_device_info_callback_t { self . cef_object . cast () } } } ; }
 mod impl_cef_media_sink_device_info_callback_t {
     use super::*;
     pub fn init_methods<I: ImplMediaSinkDeviceInfoCallback, R: Rc>(
@@ -10421,7 +10563,7 @@ pub trait ImplPreferenceObserver: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapPreferenceObserver`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl PreferenceObserver` block you can override default\nmethods implemented by the [`ImplPreferenceObserver`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_preference_observer! {\n    struct MyPreferenceObserver {\n        payload: String,\n    }\n\n    impl PreferenceObserver {\n        // ...\n    }\n}\n\nfn make_my_struct() -> PreferenceObserver {\n    MyPreferenceObserver::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_preference_observer { ($ vis : vis struct $ name : ident ; impl PreferenceObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_preference_observer ! { $ vis struct $ name { } impl PreferenceObserver { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl PreferenceObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_preference_observer_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> PreferenceObserver { PreferenceObserver :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapPreferenceObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_preference_observer_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplPreferenceObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_preference_observer_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_preference_observer { ($ vis : vis struct $ name : ident ; impl PreferenceObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_preference_observer ! { $ vis struct $ name { } impl PreferenceObserver { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl PreferenceObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_preference_observer_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> PreferenceObserver { PreferenceObserver :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapPreferenceObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_preference_observer_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplPreferenceObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_preference_observer_t { self . cef_object . cast () } } } ; }
 mod impl_cef_preference_observer_t {
     use super::*;
     pub fn init_methods<I: ImplPreferenceObserver, R: Rc>(object: &mut _cef_preference_observer_t) {
@@ -10717,7 +10859,7 @@ pub trait ImplResolveCallback: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapResolveCallback`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl ResolveCallback` block you can override default\nmethods implemented by the [`ImplResolveCallback`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_resolve_callback! {\n    struct MyResolveCallback {\n        payload: String,\n    }\n\n    impl ResolveCallback {\n        // ...\n    }\n}\n\nfn make_my_struct() -> ResolveCallback {\n    MyResolveCallback::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_resolve_callback { ($ vis : vis struct $ name : ident ; impl ResolveCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_resolve_callback ! { $ vis struct $ name { } impl ResolveCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ResolveCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resolve_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> ResolveCallback { ResolveCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapResolveCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resolve_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplResolveCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_resolve_callback_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_resolve_callback { ($ vis : vis struct $ name : ident ; impl ResolveCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_resolve_callback ! { $ vis struct $ name { } impl ResolveCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ResolveCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resolve_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> ResolveCallback { ResolveCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapResolveCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resolve_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplResolveCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_resolve_callback_t { self . cef_object . cast () } } } ; }
 mod impl_cef_resolve_callback_t {
     use super::*;
     pub fn init_methods<I: ImplResolveCallback, R: Rc>(object: &mut _cef_resolve_callback_t) {
@@ -10832,7 +10974,7 @@ pub trait ImplSettingObserver: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapSettingObserver`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl SettingObserver` block you can override default\nmethods implemented by the [`ImplSettingObserver`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_setting_observer! {\n    struct MySettingObserver {\n        payload: String,\n    }\n\n    impl SettingObserver {\n        // ...\n    }\n}\n\nfn make_my_struct() -> SettingObserver {\n    MySettingObserver::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_setting_observer { ($ vis : vis struct $ name : ident ; impl SettingObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_setting_observer ! { $ vis struct $ name { } impl SettingObserver { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl SettingObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_setting_observer_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> SettingObserver { SettingObserver :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapSettingObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_setting_observer_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplSettingObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_setting_observer_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_setting_observer { ($ vis : vis struct $ name : ident ; impl SettingObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_setting_observer ! { $ vis struct $ name { } impl SettingObserver { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl SettingObserver { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_setting_observer_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> SettingObserver { SettingObserver :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapSettingObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_setting_observer_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplSettingObserver for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_setting_observer_t { self . cef_object . cast () } } } ; }
 mod impl_cef_setting_observer_t {
     use super::*;
     pub fn init_methods<I: ImplSettingObserver, R: Rc>(object: &mut _cef_setting_observer_t) {
@@ -11903,7 +12045,7 @@ pub trait ImplRunFileDialogCallback: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapRunFileDialogCallback`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl RunFileDialogCallback` block you can override default\nmethods implemented by the [`ImplRunFileDialogCallback`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_run_file_dialog_callback! {\n    struct MyRunFileDialogCallback {\n        payload: String,\n    }\n\n    impl RunFileDialogCallback {\n        // ...\n    }\n}\n\nfn make_my_struct() -> RunFileDialogCallback {\n    MyRunFileDialogCallback::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_run_file_dialog_callback { ($ vis : vis struct $ name : ident ; impl RunFileDialogCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_run_file_dialog_callback ! { $ vis struct $ name { } impl RunFileDialogCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl RunFileDialogCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_run_file_dialog_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> RunFileDialogCallback { RunFileDialogCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapRunFileDialogCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_run_file_dialog_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplRunFileDialogCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_run_file_dialog_callback_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_run_file_dialog_callback { ($ vis : vis struct $ name : ident ; impl RunFileDialogCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_run_file_dialog_callback ! { $ vis struct $ name { } impl RunFileDialogCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl RunFileDialogCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_run_file_dialog_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> RunFileDialogCallback { RunFileDialogCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapRunFileDialogCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_run_file_dialog_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplRunFileDialogCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_run_file_dialog_callback_t { self . cef_object . cast () } } } ; }
 mod impl_cef_run_file_dialog_callback_t {
     use super::*;
     pub fn init_methods<I: ImplRunFileDialogCallback, R: Rc>(
@@ -12017,7 +12159,7 @@ pub trait ImplNavigationEntryVisitor: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapNavigationEntryVisitor`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl NavigationEntryVisitor` block you can override default\nmethods implemented by the [`ImplNavigationEntryVisitor`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_navigation_entry_visitor! {\n    struct MyNavigationEntryVisitor {\n        payload: String,\n    }\n\n    impl NavigationEntryVisitor {\n        // ...\n    }\n}\n\nfn make_my_struct() -> NavigationEntryVisitor {\n    MyNavigationEntryVisitor::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_navigation_entry_visitor { ($ vis : vis struct $ name : ident ; impl NavigationEntryVisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_navigation_entry_visitor ! { $ vis struct $ name { } impl NavigationEntryVisitor { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl NavigationEntryVisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_navigation_entry_visitor_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> NavigationEntryVisitor { NavigationEntryVisitor :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapNavigationEntryVisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_navigation_entry_visitor_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplNavigationEntryVisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_navigation_entry_visitor_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_navigation_entry_visitor { ($ vis : vis struct $ name : ident ; impl NavigationEntryVisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_navigation_entry_visitor ! { $ vis struct $ name { } impl NavigationEntryVisitor { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl NavigationEntryVisitor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_navigation_entry_visitor_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> NavigationEntryVisitor { NavigationEntryVisitor :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapNavigationEntryVisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_navigation_entry_visitor_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplNavigationEntryVisitor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_navigation_entry_visitor_t { self . cef_object . cast () } } } ; }
 mod impl_cef_navigation_entry_visitor_t {
     use super::*;
     pub fn init_methods<I: ImplNavigationEntryVisitor, R: Rc>(
@@ -12145,7 +12287,7 @@ pub trait ImplPdfPrintCallback: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapPdfPrintCallback`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl PdfPrintCallback` block you can override default\nmethods implemented by the [`ImplPdfPrintCallback`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_pdf_print_callback! {\n    struct MyPdfPrintCallback {\n        payload: String,\n    }\n\n    impl PdfPrintCallback {\n        // ...\n    }\n}\n\nfn make_my_struct() -> PdfPrintCallback {\n    MyPdfPrintCallback::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_pdf_print_callback { ($ vis : vis struct $ name : ident ; impl PdfPrintCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_pdf_print_callback ! { $ vis struct $ name { } impl PdfPrintCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl PdfPrintCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_pdf_print_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> PdfPrintCallback { PdfPrintCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapPdfPrintCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_pdf_print_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplPdfPrintCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_pdf_print_callback_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_pdf_print_callback { ($ vis : vis struct $ name : ident ; impl PdfPrintCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_pdf_print_callback ! { $ vis struct $ name { } impl PdfPrintCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl PdfPrintCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_pdf_print_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> PdfPrintCallback { PdfPrintCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapPdfPrintCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_pdf_print_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplPdfPrintCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_pdf_print_callback_t { self . cef_object . cast () } } } ; }
 mod impl_cef_pdf_print_callback_t {
     use super::*;
     pub fn init_methods<I: ImplPdfPrintCallback, R: Rc>(object: &mut _cef_pdf_print_callback_t) {
@@ -12257,7 +12399,7 @@ pub trait ImplDownloadImageCallback: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapDownloadImageCallback`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl DownloadImageCallback` block you can override default\nmethods implemented by the [`ImplDownloadImageCallback`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_download_image_callback! {\n    struct MyDownloadImageCallback {\n        payload: String,\n    }\n\n    impl DownloadImageCallback {\n        // ...\n    }\n}\n\nfn make_my_struct() -> DownloadImageCallback {\n    MyDownloadImageCallback::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_download_image_callback { ($ vis : vis struct $ name : ident ; impl DownloadImageCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_download_image_callback ! { $ vis struct $ name { } impl DownloadImageCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DownloadImageCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_download_image_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> DownloadImageCallback { DownloadImageCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDownloadImageCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_download_image_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDownloadImageCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_download_image_callback_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_download_image_callback { ($ vis : vis struct $ name : ident ; impl DownloadImageCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_download_image_callback ! { $ vis struct $ name { } impl DownloadImageCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DownloadImageCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_download_image_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> DownloadImageCallback { DownloadImageCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDownloadImageCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_download_image_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDownloadImageCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_download_image_callback_t { self . cef_object . cast () } } } ; }
 mod impl_cef_download_image_callback_t {
     use super::*;
     pub fn init_methods<I: ImplDownloadImageCallback, R: Rc>(
@@ -13736,7 +13878,7 @@ pub trait ImplAudioHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapAudioHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl AudioHandler` block you can override default\nmethods implemented by the [`ImplAudioHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_audio_handler! {\n    struct MyAudioHandler {\n        payload: String,\n    }\n\n    impl AudioHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> AudioHandler {\n    MyAudioHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_audio_handler { ($ vis : vis struct $ name : ident ; impl AudioHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_audio_handler ! { $ vis struct $ name { } impl AudioHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl AudioHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_audio_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> AudioHandler { AudioHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapAudioHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_audio_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplAudioHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_audio_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_audio_handler { ($ vis : vis struct $ name : ident ; impl AudioHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_audio_handler ! { $ vis struct $ name { } impl AudioHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl AudioHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_audio_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> AudioHandler { AudioHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapAudioHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_audio_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplAudioHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_audio_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_audio_handler_t {
     use super::*;
     pub fn init_methods<I: ImplAudioHandler, R: Rc>(object: &mut _cef_audio_handler_t) {
@@ -14057,7 +14199,7 @@ pub trait ImplCommandHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapCommandHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl CommandHandler` block you can override default\nmethods implemented by the [`ImplCommandHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_command_handler! {\n    struct MyCommandHandler {\n        payload: String,\n    }\n\n    impl CommandHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> CommandHandler {\n    MyCommandHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_command_handler { ($ vis : vis struct $ name : ident ; impl CommandHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_command_handler ! { $ vis struct $ name { } impl CommandHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl CommandHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_command_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> CommandHandler { CommandHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapCommandHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_command_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplCommandHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_command_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_command_handler { ($ vis : vis struct $ name : ident ; impl CommandHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_command_handler ! { $ vis struct $ name { } impl CommandHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl CommandHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_command_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> CommandHandler { CommandHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapCommandHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_command_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplCommandHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_command_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_command_handler_t {
     use super::*;
     pub fn init_methods<I: ImplCommandHandler, R: Rc>(object: &mut _cef_command_handler_t) {
@@ -14352,7 +14494,7 @@ pub trait ImplMenuModelDelegate: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapMenuModelDelegate`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl MenuModelDelegate` block you can override default\nmethods implemented by the [`ImplMenuModelDelegate`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_menu_model_delegate! {\n    struct MyMenuModelDelegate {\n        payload: String,\n    }\n\n    impl MenuModelDelegate {\n        // ...\n    }\n}\n\nfn make_my_struct() -> MenuModelDelegate {\n    MyMenuModelDelegate::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_menu_model_delegate { ($ vis : vis struct $ name : ident ; impl MenuModelDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_menu_model_delegate ! { $ vis struct $ name { } impl MenuModelDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl MenuModelDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_menu_model_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> MenuModelDelegate { MenuModelDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapMenuModelDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_menu_model_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplMenuModelDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_menu_model_delegate_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_menu_model_delegate { ($ vis : vis struct $ name : ident ; impl MenuModelDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_menu_model_delegate ! { $ vis struct $ name { } impl MenuModelDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl MenuModelDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_menu_model_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> MenuModelDelegate { MenuModelDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapMenuModelDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_menu_model_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplMenuModelDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_menu_model_delegate_t { self . cef_object . cast () } } } ; }
 mod impl_cef_menu_model_delegate_t {
     use super::*;
     pub fn init_methods<I: ImplMenuModelDelegate, R: Rc>(object: &mut _cef_menu_model_delegate_t) {
@@ -16172,7 +16314,7 @@ pub trait ImplContextMenuHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapContextMenuHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl ContextMenuHandler` block you can override default\nmethods implemented by the [`ImplContextMenuHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_context_menu_handler! {\n    struct MyContextMenuHandler {\n        payload: String,\n    }\n\n    impl ContextMenuHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> ContextMenuHandler {\n    MyContextMenuHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_context_menu_handler { ($ vis : vis struct $ name : ident ; impl ContextMenuHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_context_menu_handler ! { $ vis struct $ name { } impl ContextMenuHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ContextMenuHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_context_menu_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> ContextMenuHandler { ContextMenuHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapContextMenuHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_context_menu_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplContextMenuHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_context_menu_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_context_menu_handler { ($ vis : vis struct $ name : ident ; impl ContextMenuHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_context_menu_handler ! { $ vis struct $ name { } impl ContextMenuHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ContextMenuHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_context_menu_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> ContextMenuHandler { ContextMenuHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapContextMenuHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_context_menu_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplContextMenuHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_context_menu_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_context_menu_handler_t {
     use super::*;
     pub fn init_methods<I: ImplContextMenuHandler, R: Rc>(
@@ -17180,7 +17322,7 @@ pub trait ImplDialogHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapDialogHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl DialogHandler` block you can override default\nmethods implemented by the [`ImplDialogHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_dialog_handler! {\n    struct MyDialogHandler {\n        payload: String,\n    }\n\n    impl DialogHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> DialogHandler {\n    MyDialogHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_dialog_handler { ($ vis : vis struct $ name : ident ; impl DialogHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_dialog_handler ! { $ vis struct $ name { } impl DialogHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DialogHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_dialog_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> DialogHandler { DialogHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDialogHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_dialog_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDialogHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_dialog_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_dialog_handler { ($ vis : vis struct $ name : ident ; impl DialogHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_dialog_handler ! { $ vis struct $ name { } impl DialogHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DialogHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_dialog_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> DialogHandler { DialogHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDialogHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_dialog_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDialogHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_dialog_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_dialog_handler_t {
     use super::*;
     pub fn init_methods<I: ImplDialogHandler, R: Rc>(object: &mut _cef_dialog_handler_t) {
@@ -17504,7 +17646,7 @@ pub trait ImplDisplayHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapDisplayHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl DisplayHandler` block you can override default\nmethods implemented by the [`ImplDisplayHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_display_handler! {\n    struct MyDisplayHandler {\n        payload: String,\n    }\n\n    impl DisplayHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> DisplayHandler {\n    MyDisplayHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_display_handler { ($ vis : vis struct $ name : ident ; impl DisplayHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_display_handler ! { $ vis struct $ name { } impl DisplayHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DisplayHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_display_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> DisplayHandler { DisplayHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDisplayHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_display_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDisplayHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_display_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_display_handler { ($ vis : vis struct $ name : ident ; impl DisplayHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_display_handler ! { $ vis struct $ name { } impl DisplayHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DisplayHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_display_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> DisplayHandler { DisplayHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDisplayHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_display_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDisplayHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_display_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_display_handler_t {
     use super::*;
     pub fn init_methods<I: ImplDisplayHandler, R: Rc>(object: &mut _cef_display_handler_t) {
@@ -18670,7 +18812,7 @@ pub trait ImplDownloadHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapDownloadHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl DownloadHandler` block you can override default\nmethods implemented by the [`ImplDownloadHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_download_handler! {\n    struct MyDownloadHandler {\n        payload: String,\n    }\n\n    impl DownloadHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> DownloadHandler {\n    MyDownloadHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_download_handler { ($ vis : vis struct $ name : ident ; impl DownloadHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_download_handler ! { $ vis struct $ name { } impl DownloadHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DownloadHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_download_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> DownloadHandler { DownloadHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDownloadHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_download_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDownloadHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_download_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_download_handler { ($ vis : vis struct $ name : ident ; impl DownloadHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_download_handler ! { $ vis struct $ name { } impl DownloadHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DownloadHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_download_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> DownloadHandler { DownloadHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDownloadHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_download_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDownloadHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_download_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_download_handler_t {
     use super::*;
     pub fn init_methods<I: ImplDownloadHandler, R: Rc>(object: &mut _cef_download_handler_t) {
@@ -18962,7 +19104,7 @@ pub trait ImplDragHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapDragHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl DragHandler` block you can override default\nmethods implemented by the [`ImplDragHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_drag_handler! {\n    struct MyDragHandler {\n        payload: String,\n    }\n\n    impl DragHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> DragHandler {\n    MyDragHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_drag_handler { ($ vis : vis struct $ name : ident ; impl DragHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_drag_handler ! { $ vis struct $ name { } impl DragHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DragHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_drag_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> DragHandler { DragHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDragHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_drag_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDragHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_drag_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_drag_handler { ($ vis : vis struct $ name : ident ; impl DragHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_drag_handler ! { $ vis struct $ name { } impl DragHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl DragHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_drag_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> DragHandler { DragHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapDragHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_drag_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplDragHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_drag_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_drag_handler_t {
     use super::*;
     pub fn init_methods<I: ImplDragHandler, R: Rc>(object: &mut _cef_drag_handler_t) {
@@ -19006,7 +19148,7 @@ mod impl_cef_drag_handler_t {
             None
         } else {
             let arg_regions = unsafe { std::slice::from_raw_parts(arg_regions, arg_regions_count) };
-            let arg_regions: Vec<_> = arg_regions.iter().map(|elem| elem.clone().into()).collect();
+            let arg_regions: Vec<_> = arg_regions.iter().map(|elem| (*elem).into()).collect();
             Some(arg_regions)
         };
         let arg_regions = arg_regions.as_deref();
@@ -19172,7 +19314,7 @@ pub trait ImplFindHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapFindHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl FindHandler` block you can override default\nmethods implemented by the [`ImplFindHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_find_handler! {\n    struct MyFindHandler {\n        payload: String,\n    }\n\n    impl FindHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> FindHandler {\n    MyFindHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_find_handler { ($ vis : vis struct $ name : ident ; impl FindHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_find_handler ! { $ vis struct $ name { } impl FindHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl FindHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_find_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> FindHandler { FindHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapFindHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_find_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplFindHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_find_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_find_handler { ($ vis : vis struct $ name : ident ; impl FindHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_find_handler ! { $ vis struct $ name { } impl FindHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl FindHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_find_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> FindHandler { FindHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapFindHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_find_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplFindHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_find_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_find_handler_t {
     use super::*;
     pub fn init_methods<I: ImplFindHandler, R: Rc>(object: &mut _cef_find_handler_t) {
@@ -19358,7 +19500,7 @@ pub trait ImplFocusHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapFocusHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl FocusHandler` block you can override default\nmethods implemented by the [`ImplFocusHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_focus_handler! {\n    struct MyFocusHandler {\n        payload: String,\n    }\n\n    impl FocusHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> FocusHandler {\n    MyFocusHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_focus_handler { ($ vis : vis struct $ name : ident ; impl FocusHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_focus_handler ! { $ vis struct $ name { } impl FocusHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl FocusHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_focus_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> FocusHandler { FocusHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapFocusHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_focus_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplFocusHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_focus_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_focus_handler { ($ vis : vis struct $ name : ident ; impl FocusHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_focus_handler ! { $ vis struct $ name { } impl FocusHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl FocusHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_focus_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> FocusHandler { FocusHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapFocusHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_focus_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplFocusHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_focus_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_focus_handler_t {
     use super::*;
     pub fn init_methods<I: ImplFocusHandler, R: Rc>(object: &mut _cef_focus_handler_t) {
@@ -19547,7 +19689,7 @@ pub trait ImplFrameHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapFrameHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl FrameHandler` block you can override default\nmethods implemented by the [`ImplFrameHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_frame_handler! {\n    struct MyFrameHandler {\n        payload: String,\n    }\n\n    impl FrameHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> FrameHandler {\n    MyFrameHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_frame_handler { ($ vis : vis struct $ name : ident ; impl FrameHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_frame_handler ! { $ vis struct $ name { } impl FrameHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl FrameHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_frame_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> FrameHandler { FrameHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapFrameHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_frame_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplFrameHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_frame_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_frame_handler { ($ vis : vis struct $ name : ident ; impl FrameHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_frame_handler ! { $ vis struct $ name { } impl FrameHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl FrameHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_frame_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> FrameHandler { FrameHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapFrameHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_frame_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplFrameHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_frame_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_frame_handler_t {
     use super::*;
     pub fn init_methods<I: ImplFrameHandler, R: Rc>(object: &mut _cef_frame_handler_t) {
@@ -19924,7 +20066,7 @@ pub trait ImplJsdialogHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapJsdialogHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl JsdialogHandler` block you can override default\nmethods implemented by the [`ImplJsdialogHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_jsdialog_handler! {\n    struct MyJsdialogHandler {\n        payload: String,\n    }\n\n    impl JsdialogHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> JsdialogHandler {\n    MyJsdialogHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_jsdialog_handler { ($ vis : vis struct $ name : ident ; impl JsdialogHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_jsdialog_handler ! { $ vis struct $ name { } impl JsdialogHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl JsdialogHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_jsdialog_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> JsdialogHandler { JsdialogHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapJsdialogHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_jsdialog_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplJsdialogHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_jsdialog_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_jsdialog_handler { ($ vis : vis struct $ name : ident ; impl JsdialogHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_jsdialog_handler ! { $ vis struct $ name { } impl JsdialogHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl JsdialogHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_jsdialog_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> JsdialogHandler { JsdialogHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapJsdialogHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_jsdialog_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplJsdialogHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_jsdialog_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_jsdialog_handler_t {
     use super::*;
     pub fn init_methods<I: ImplJsdialogHandler, R: Rc>(object: &mut _cef_jsdialog_handler_t) {
@@ -20290,7 +20432,7 @@ pub trait ImplKeyboardHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapKeyboardHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl KeyboardHandler` block you can override default\nmethods implemented by the [`ImplKeyboardHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_keyboard_handler! {\n    struct MyKeyboardHandler {\n        payload: String,\n    }\n\n    impl KeyboardHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> KeyboardHandler {\n    MyKeyboardHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_keyboard_handler { ($ vis : vis struct $ name : ident ; impl KeyboardHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_keyboard_handler ! { $ vis struct $ name { } impl KeyboardHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl KeyboardHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_keyboard_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> KeyboardHandler { KeyboardHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapKeyboardHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_keyboard_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplKeyboardHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_keyboard_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_keyboard_handler { ($ vis : vis struct $ name : ident ; impl KeyboardHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_keyboard_handler ! { $ vis struct $ name { } impl KeyboardHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl KeyboardHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_keyboard_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> KeyboardHandler { KeyboardHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapKeyboardHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_keyboard_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplKeyboardHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_keyboard_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_keyboard_handler_t {
     use super::*;
     pub fn init_methods<I: ImplKeyboardHandler, R: Rc>(object: &mut _cef_keyboard_handler_t) {
@@ -20542,7 +20684,7 @@ pub trait ImplLifeSpanHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapLifeSpanHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl LifeSpanHandler` block you can override default\nmethods implemented by the [`ImplLifeSpanHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_life_span_handler! {\n    struct MyLifeSpanHandler {\n        payload: String,\n    }\n\n    impl LifeSpanHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> LifeSpanHandler {\n    MyLifeSpanHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_life_span_handler { ($ vis : vis struct $ name : ident ; impl LifeSpanHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_life_span_handler ! { $ vis struct $ name { } impl LifeSpanHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl LifeSpanHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_life_span_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> LifeSpanHandler { LifeSpanHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapLifeSpanHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_life_span_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplLifeSpanHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_life_span_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_life_span_handler { ($ vis : vis struct $ name : ident ; impl LifeSpanHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_life_span_handler ! { $ vis struct $ name { } impl LifeSpanHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl LifeSpanHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_life_span_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> LifeSpanHandler { LifeSpanHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapLifeSpanHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_life_span_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplLifeSpanHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_life_span_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_life_span_handler_t {
     use super::*;
     pub fn init_methods<I: ImplLifeSpanHandler, R: Rc>(object: &mut _cef_life_span_handler_t) {
@@ -21236,7 +21378,7 @@ pub trait ImplLoadHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapLoadHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl LoadHandler` block you can override default\nmethods implemented by the [`ImplLoadHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_load_handler! {\n    struct MyLoadHandler {\n        payload: String,\n    }\n\n    impl LoadHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> LoadHandler {\n    MyLoadHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_load_handler { ($ vis : vis struct $ name : ident ; impl LoadHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_load_handler ! { $ vis struct $ name { } impl LoadHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl LoadHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_load_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> LoadHandler { LoadHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapLoadHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_load_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplLoadHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_load_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_load_handler { ($ vis : vis struct $ name : ident ; impl LoadHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_load_handler ! { $ vis struct $ name { } impl LoadHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl LoadHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_load_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> LoadHandler { LoadHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapLoadHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_load_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplLoadHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_load_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_load_handler_t {
     use super::*;
     pub fn init_methods<I: ImplLoadHandler, R: Rc>(object: &mut _cef_load_handler_t) {
@@ -21699,7 +21841,7 @@ pub trait ImplPermissionHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapPermissionHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl PermissionHandler` block you can override default\nmethods implemented by the [`ImplPermissionHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_permission_handler! {\n    struct MyPermissionHandler {\n        payload: String,\n    }\n\n    impl PermissionHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> PermissionHandler {\n    MyPermissionHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_permission_handler { ($ vis : vis struct $ name : ident ; impl PermissionHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_permission_handler ! { $ vis struct $ name { } impl PermissionHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl PermissionHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_permission_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> PermissionHandler { PermissionHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapPermissionHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_permission_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplPermissionHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_permission_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_permission_handler { ($ vis : vis struct $ name : ident ; impl PermissionHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_permission_handler ! { $ vis struct $ name { } impl PermissionHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl PermissionHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_permission_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> PermissionHandler { PermissionHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapPermissionHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_permission_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplPermissionHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_permission_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_permission_handler_t {
     use super::*;
     pub fn init_methods<I: ImplPermissionHandler, R: Rc>(object: &mut _cef_permission_handler_t) {
@@ -22583,7 +22725,7 @@ pub trait ImplPrintHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapPrintHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl PrintHandler` block you can override default\nmethods implemented by the [`ImplPrintHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_print_handler! {\n    struct MyPrintHandler {\n        payload: String,\n    }\n\n    impl PrintHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> PrintHandler {\n    MyPrintHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_print_handler { ($ vis : vis struct $ name : ident ; impl PrintHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_print_handler ! { $ vis struct $ name { } impl PrintHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl PrintHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_print_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> PrintHandler { PrintHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapPrintHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_print_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplPrintHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_print_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_print_handler { ($ vis : vis struct $ name : ident ; impl PrintHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_print_handler ! { $ vis struct $ name { } impl PrintHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl PrintHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_print_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> PrintHandler { PrintHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapPrintHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_print_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplPrintHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_print_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_print_handler_t {
     use super::*;
     pub fn init_methods<I: ImplPrintHandler, R: Rc>(object: &mut _cef_print_handler_t) {
@@ -22911,141 +23053,6 @@ impl From<PrintHandler> for *mut _cef_print_handler_t {
     }
 }
 
-/// See [`_cef_accessibility_handler_t`] for more documentation.
-#[derive(Clone)]
-pub struct AccessibilityHandler(RefGuard<_cef_accessibility_handler_t>);
-impl AccessibilityHandler {
-    pub fn new<T>(interface: T) -> Self
-    where
-        T: WrapAccessibilityHandler,
-    {
-        unsafe {
-            let mut cef_object = std::mem::zeroed();
-            <T as ImplAccessibilityHandler>::init_methods(&mut cef_object);
-            let object = RcImpl::new(cef_object, interface);
-            <T as WrapAccessibilityHandler>::wrap_rc(&mut (*object).interface, object);
-            let object: *mut _cef_accessibility_handler_t = object.cast();
-            object.wrap_result()
-        }
-    }
-}
-pub trait WrapAccessibilityHandler: ImplAccessibilityHandler {
-    fn wrap_rc(&mut self, object: *mut RcImpl<_cef_accessibility_handler_t, Self>);
-}
-pub trait ImplAccessibilityHandler: Clone + Sized + Rc {
-    #[doc = "See [`_cef_accessibility_handler_t::on_accessibility_tree_change`] for more documentation."]
-    fn on_accessibility_tree_change(&self, value: Option<&mut Value>) {}
-    #[doc = "See [`_cef_accessibility_handler_t::on_accessibility_location_change`] for more documentation."]
-    fn on_accessibility_location_change(&self, value: Option<&mut Value>) {}
-    fn init_methods(object: &mut _cef_accessibility_handler_t) {
-        impl_cef_accessibility_handler_t::init_methods::<Self, _cef_accessibility_handler_t>(
-            object,
-        );
-    }
-    fn get_raw(&self) -> *mut _cef_accessibility_handler_t;
-}
-#[doc = "Implement the [`WrapAccessibilityHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl AccessibilityHandler` block you can override default\nmethods implemented by the [`ImplAccessibilityHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_accessibility_handler! {\n    struct MyAccessibilityHandler {\n        payload: String,\n    }\n\n    impl AccessibilityHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> AccessibilityHandler {\n    MyAccessibilityHandler::new(\"payload\".to_string())\n}\n```"]
-#[macro_export]
-macro_rules ! wrap_accessibility_handler { ($ vis : vis struct $ name : ident ; impl AccessibilityHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_accessibility_handler ! { $ vis struct $ name { } impl AccessibilityHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl AccessibilityHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_accessibility_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> AccessibilityHandler { AccessibilityHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapAccessibilityHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_accessibility_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplAccessibilityHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_accessibility_handler_t { self . cef_object . cast () } } } ; }
-mod impl_cef_accessibility_handler_t {
-    use super::*;
-    pub fn init_methods<I: ImplAccessibilityHandler, R: Rc>(
-        object: &mut _cef_accessibility_handler_t,
-    ) {
-        object.on_accessibility_tree_change = Some(on_accessibility_tree_change::<I, R>);
-        object.on_accessibility_location_change = Some(on_accessibility_location_change::<I, R>);
-    }
-    extern "C" fn on_accessibility_tree_change<I: ImplAccessibilityHandler, R: Rc>(
-        self_: *mut _cef_accessibility_handler_t,
-        value: *mut _cef_value_t,
-    ) {
-        let (arg_self_, arg_value) = (self_, value);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_value =
-            unsafe { arg_value.as_mut() }.map(|arg| Value(unsafe { RefGuard::from_raw(arg) }));
-        let arg_value = arg_value.as_mut();
-        ImplAccessibilityHandler::on_accessibility_tree_change(&arg_self_.interface, arg_value)
-    }
-    extern "C" fn on_accessibility_location_change<I: ImplAccessibilityHandler, R: Rc>(
-        self_: *mut _cef_accessibility_handler_t,
-        value: *mut _cef_value_t,
-    ) {
-        let (arg_self_, arg_value) = (self_, value);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_value =
-            unsafe { arg_value.as_mut() }.map(|arg| Value(unsafe { RefGuard::from_raw(arg) }));
-        let arg_value = arg_value.as_mut();
-        ImplAccessibilityHandler::on_accessibility_location_change(&arg_self_.interface, arg_value)
-    }
-}
-impl ImplAccessibilityHandler for AccessibilityHandler {
-    fn on_accessibility_tree_change(&self, value: Option<&mut Value>) {
-        unsafe {
-            if let Some(f) = self.0.on_accessibility_tree_change {
-                let arg_value = value;
-                let arg_self_ = self.into_raw();
-                let arg_value = arg_value
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplValue::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                f(arg_self_, arg_value);
-            }
-        }
-    }
-    fn on_accessibility_location_change(&self, value: Option<&mut Value>) {
-        unsafe {
-            if let Some(f) = self.0.on_accessibility_location_change {
-                let arg_value = value;
-                let arg_self_ = self.into_raw();
-                let arg_value = arg_value
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplValue::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                f(arg_self_, arg_value);
-            }
-        }
-    }
-    fn get_raw(&self) -> *mut _cef_accessibility_handler_t {
-        unsafe { RefGuard::into_raw(&self.0) }
-    }
-}
-impl Rc for _cef_accessibility_handler_t {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.base.as_base()
-    }
-}
-impl Rc for AccessibilityHandler {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.0.as_base()
-    }
-}
-impl ConvertParam<*mut _cef_accessibility_handler_t> for &AccessibilityHandler {
-    fn into_raw(self) -> *mut _cef_accessibility_handler_t {
-        ImplAccessibilityHandler::get_raw(self)
-    }
-}
-impl ConvertParam<*mut _cef_accessibility_handler_t> for &mut AccessibilityHandler {
-    fn into_raw(self) -> *mut _cef_accessibility_handler_t {
-        ImplAccessibilityHandler::get_raw(self)
-    }
-}
-impl ConvertReturnValue<AccessibilityHandler> for *mut _cef_accessibility_handler_t {
-    fn wrap_result(self) -> AccessibilityHandler {
-        AccessibilityHandler(unsafe { RefGuard::from_raw(self) })
-    }
-}
-impl From<AccessibilityHandler> for *mut _cef_accessibility_handler_t {
-    fn from(value: AccessibilityHandler) -> Self {
-        let object = ImplAccessibilityHandler::get_raw(&value);
-        std::mem::forget(value);
-        object
-    }
-}
-
 /// See [`_cef_render_handler_t`] for more documentation.
 #[derive(Clone)]
 pub struct RenderHandler(RefGuard<_cef_render_handler_t>);
@@ -23185,7 +23192,7 @@ pub trait ImplRenderHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapRenderHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl RenderHandler` block you can override default\nmethods implemented by the [`ImplRenderHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_render_handler! {\n    struct MyRenderHandler {\n        payload: String,\n    }\n\n    impl RenderHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> RenderHandler {\n    MyRenderHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_render_handler { ($ vis : vis struct $ name : ident ; impl RenderHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_render_handler ! { $ vis struct $ name { } impl RenderHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl RenderHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_render_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> RenderHandler { RenderHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapRenderHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_render_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplRenderHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_render_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_render_handler { ($ vis : vis struct $ name : ident ; impl RenderHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_render_handler ! { $ vis struct $ name { } impl RenderHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl RenderHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_render_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> RenderHandler { RenderHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapRenderHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_render_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplRenderHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_render_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_render_handler_t {
     use super::*;
     pub fn init_methods<I: ImplRenderHandler, R: Rc>(object: &mut _cef_render_handler_t) {
@@ -23378,10 +23385,8 @@ mod impl_cef_render_handler_t {
         } else {
             let arg_dirty_rects =
                 unsafe { std::slice::from_raw_parts(arg_dirty_rects, arg_dirty_rects_count) };
-            let arg_dirty_rects: Vec<_> = arg_dirty_rects
-                .iter()
-                .map(|elem| elem.clone().into())
-                .collect();
+            let arg_dirty_rects: Vec<_> =
+                arg_dirty_rects.iter().map(|elem| (*elem).into()).collect();
             Some(arg_dirty_rects)
         };
         let arg_dirty_rects = arg_dirty_rects.as_deref();
@@ -23418,10 +23423,8 @@ mod impl_cef_render_handler_t {
         } else {
             let arg_dirty_rects =
                 unsafe { std::slice::from_raw_parts(arg_dirty_rects, arg_dirty_rects_count) };
-            let arg_dirty_rects: Vec<_> = arg_dirty_rects
-                .iter()
-                .map(|elem| elem.clone().into())
-                .collect();
+            let arg_dirty_rects: Vec<_> =
+                arg_dirty_rects.iter().map(|elem| (*elem).into()).collect();
             Some(arg_dirty_rects)
         };
         let arg_dirty_rects = arg_dirty_rects.as_deref();
@@ -23582,7 +23585,7 @@ mod impl_cef_render_handler_t {
             };
             let arg_character_bounds: Vec<_> = arg_character_bounds
                 .iter()
-                .map(|elem| elem.clone().into())
+                .map(|elem| (*elem).into())
                 .collect();
             Some(arg_character_bounds)
         };
@@ -24725,7 +24728,7 @@ pub trait ImplResourceHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapResourceHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl ResourceHandler` block you can override default\nmethods implemented by the [`ImplResourceHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_resource_handler! {\n    struct MyResourceHandler {\n        payload: String,\n    }\n\n    impl ResourceHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> ResourceHandler {\n    MyResourceHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_resource_handler { ($ vis : vis struct $ name : ident ; impl ResourceHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_resource_handler ! { $ vis struct $ name { } impl ResourceHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ResourceHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resource_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> ResourceHandler { ResourceHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapResourceHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resource_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplResourceHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_resource_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_resource_handler { ($ vis : vis struct $ name : ident ; impl ResourceHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_resource_handler ! { $ vis struct $ name { } impl ResourceHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ResourceHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resource_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> ResourceHandler { ResourceHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapResourceHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resource_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplResourceHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_resource_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_resource_handler_t {
     use super::*;
     pub fn init_methods<I: ImplResourceHandler, R: Rc>(object: &mut _cef_resource_handler_t) {
@@ -25196,7 +25199,7 @@ pub trait ImplResponseFilter: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapResponseFilter`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl ResponseFilter` block you can override default\nmethods implemented by the [`ImplResponseFilter`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_response_filter! {\n    struct MyResponseFilter {\n        payload: String,\n    }\n\n    impl ResponseFilter {\n        // ...\n    }\n}\n\nfn make_my_struct() -> ResponseFilter {\n    MyResponseFilter::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_response_filter { ($ vis : vis struct $ name : ident ; impl ResponseFilter { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_response_filter ! { $ vis struct $ name { } impl ResponseFilter { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ResponseFilter { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_response_filter_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> ResponseFilter { ResponseFilter :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapResponseFilter for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_response_filter_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplResponseFilter for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_response_filter_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_response_filter { ($ vis : vis struct $ name : ident ; impl ResponseFilter { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_response_filter ! { $ vis struct $ name { } impl ResponseFilter { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ResponseFilter { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_response_filter_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> ResponseFilter { ResponseFilter :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapResponseFilter for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_response_filter_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplResponseFilter for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_response_filter_t { self . cef_object . cast () } } } ; }
 mod impl_cef_response_filter_t {
     use super::*;
     pub fn init_methods<I: ImplResponseFilter, R: Rc>(object: &mut _cef_response_filter_t) {
@@ -25500,7 +25503,7 @@ pub trait ImplResourceRequestHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapResourceRequestHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl ResourceRequestHandler` block you can override default\nmethods implemented by the [`ImplResourceRequestHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_resource_request_handler! {\n    struct MyResourceRequestHandler {\n        payload: String,\n    }\n\n    impl ResourceRequestHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> ResourceRequestHandler {\n    MyResourceRequestHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_resource_request_handler { ($ vis : vis struct $ name : ident ; impl ResourceRequestHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_resource_request_handler ! { $ vis struct $ name { } impl ResourceRequestHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ResourceRequestHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resource_request_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> ResourceRequestHandler { ResourceRequestHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapResourceRequestHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resource_request_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplResourceRequestHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_resource_request_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_resource_request_handler { ($ vis : vis struct $ name : ident ; impl ResourceRequestHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_resource_request_handler ! { $ vis struct $ name { } impl ResourceRequestHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ResourceRequestHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resource_request_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> ResourceRequestHandler { ResourceRequestHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapResourceRequestHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resource_request_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplResourceRequestHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_resource_request_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_resource_request_handler_t {
     use super::*;
     pub fn init_methods<I: ImplResourceRequestHandler, R: Rc>(
@@ -26250,7 +26253,7 @@ pub trait ImplCookieAccessFilter: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapCookieAccessFilter`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl CookieAccessFilter` block you can override default\nmethods implemented by the [`ImplCookieAccessFilter`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_cookie_access_filter! {\n    struct MyCookieAccessFilter {\n        payload: String,\n    }\n\n    impl CookieAccessFilter {\n        // ...\n    }\n}\n\nfn make_my_struct() -> CookieAccessFilter {\n    MyCookieAccessFilter::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_cookie_access_filter { ($ vis : vis struct $ name : ident ; impl CookieAccessFilter { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_cookie_access_filter ! { $ vis struct $ name { } impl CookieAccessFilter { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl CookieAccessFilter { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_cookie_access_filter_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> CookieAccessFilter { CookieAccessFilter :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapCookieAccessFilter for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_cookie_access_filter_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplCookieAccessFilter for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_cookie_access_filter_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_cookie_access_filter { ($ vis : vis struct $ name : ident ; impl CookieAccessFilter { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_cookie_access_filter ! { $ vis struct $ name { } impl CookieAccessFilter { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl CookieAccessFilter { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_cookie_access_filter_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> CookieAccessFilter { CookieAccessFilter :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapCookieAccessFilter for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_cookie_access_filter_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplCookieAccessFilter for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_cookie_access_filter_t { self . cef_object . cast () } } } ; }
 mod impl_cef_cookie_access_filter_t {
     use super::*;
     pub fn init_methods<I: ImplCookieAccessFilter, R: Rc>(
@@ -26800,7 +26803,7 @@ pub trait ImplRequestHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapRequestHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl RequestHandler` block you can override default\nmethods implemented by the [`ImplRequestHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_request_handler! {\n    struct MyRequestHandler {\n        payload: String,\n    }\n\n    impl RequestHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> RequestHandler {\n    MyRequestHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_request_handler { ($ vis : vis struct $ name : ident ; impl RequestHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_request_handler ! { $ vis struct $ name { } impl RequestHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl RequestHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_request_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> RequestHandler { RequestHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapRequestHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_request_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplRequestHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_request_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_request_handler { ($ vis : vis struct $ name : ident ; impl RequestHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_request_handler ! { $ vis struct $ name { } impl RequestHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl RequestHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_request_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> RequestHandler { RequestHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapRequestHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_request_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplRequestHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_request_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_request_handler_t {
     use super::*;
     pub fn init_methods<I: ImplRequestHandler, R: Rc>(object: &mut _cef_request_handler_t) {
@@ -27841,7 +27844,7 @@ pub trait ImplClient: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapClient`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl Client` block you can override default\nmethods implemented by the [`ImplClient`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_client! {\n    struct MyClient {\n        payload: String,\n    }\n\n    impl Client {\n        // ...\n    }\n}\n\nfn make_my_struct() -> Client {\n    MyClient::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_client { ($ vis : vis struct $ name : ident ; impl Client { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_client ! { $ vis struct $ name { } impl Client { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl Client { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_client_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> Client { Client :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapClient for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_client_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplClient for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_client_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_client { ($ vis : vis struct $ name : ident ; impl Client { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_client ! { $ vis struct $ name { } impl Client { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl Client { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_client_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> Client { Client :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapClient for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_client_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplClient for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_client_t { self . cef_object . cast () } } } ; }
 mod impl_cef_client_t {
     use super::*;
     pub fn init_methods<I: ImplClient, R: Rc>(object: &mut _cef_client_t) {
@@ -28846,7 +28849,7 @@ pub trait ImplRequestContextHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapRequestContextHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl RequestContextHandler` block you can override default\nmethods implemented by the [`ImplRequestContextHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_request_context_handler! {\n    struct MyRequestContextHandler {\n        payload: String,\n    }\n\n    impl RequestContextHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> RequestContextHandler {\n    MyRequestContextHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_request_context_handler { ($ vis : vis struct $ name : ident ; impl RequestContextHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_request_context_handler ! { $ vis struct $ name { } impl RequestContextHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl RequestContextHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_request_context_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> RequestContextHandler { RequestContextHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapRequestContextHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_request_context_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplRequestContextHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_request_context_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_request_context_handler { ($ vis : vis struct $ name : ident ; impl RequestContextHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_request_context_handler ! { $ vis struct $ name { } impl RequestContextHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl RequestContextHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_request_context_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> RequestContextHandler { RequestContextHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapRequestContextHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_request_context_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplRequestContextHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_request_context_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_request_context_handler_t {
     use super::*;
     pub fn init_methods<I: ImplRequestContextHandler, R: Rc>(
@@ -29129,7 +29132,7 @@ pub trait ImplBrowserProcessHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapBrowserProcessHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl BrowserProcessHandler` block you can override default\nmethods implemented by the [`ImplBrowserProcessHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_browser_process_handler! {\n    struct MyBrowserProcessHandler {\n        payload: String,\n    }\n\n    impl BrowserProcessHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> BrowserProcessHandler {\n    MyBrowserProcessHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_browser_process_handler { ($ vis : vis struct $ name : ident ; impl BrowserProcessHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_browser_process_handler ! { $ vis struct $ name { } impl BrowserProcessHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl BrowserProcessHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_browser_process_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> BrowserProcessHandler { BrowserProcessHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapBrowserProcessHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_browser_process_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplBrowserProcessHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_browser_process_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_browser_process_handler { ($ vis : vis struct $ name : ident ; impl BrowserProcessHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_browser_process_handler ! { $ vis struct $ name { } impl BrowserProcessHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl BrowserProcessHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_browser_process_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> BrowserProcessHandler { BrowserProcessHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapBrowserProcessHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_browser_process_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplBrowserProcessHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_browser_process_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_browser_process_handler_t {
     use super::*;
     pub fn init_methods<I: ImplBrowserProcessHandler, R: Rc>(
@@ -29416,7 +29419,7 @@ pub trait ImplTask: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapTask`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl Task` block you can override default\nmethods implemented by the [`ImplTask`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_task! {\n    struct MyTask {\n        payload: String,\n    }\n\n    impl Task {\n        // ...\n    }\n}\n\nfn make_my_struct() -> Task {\n    MyTask::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_task { ($ vis : vis struct $ name : ident ; impl Task { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_task ! { $ vis struct $ name { } impl Task { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl Task { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_task_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> Task { Task :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapTask for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_task_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplTask for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_task_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_task { ($ vis : vis struct $ name : ident ; impl Task { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_task ! { $ vis struct $ name { } impl Task { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl Task { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_task_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> Task { Task :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapTask for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_task_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplTask for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_task_t { self . cef_object . cast () } } } ; }
 mod impl_cef_task_t {
     use super::*;
     pub fn init_methods<I: ImplTask, R: Rc>(object: &mut _cef_task_t) {
@@ -29908,7 +29911,7 @@ pub trait ImplV8Handler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapV8Handler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl V8Handler` block you can override default\nmethods implemented by the [`ImplV8Handler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_v8_handler! {\n    struct MyV8Handler {\n        payload: String,\n    }\n\n    impl V8Handler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> V8Handler {\n    MyV8Handler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_v8_handler { ($ vis : vis struct $ name : ident ; impl V8Handler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_v8_handler ! { $ vis struct $ name { } impl V8Handler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl V8Handler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> V8Handler { V8Handler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapV8Handler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplV8Handler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_v8_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_v8_handler { ($ vis : vis struct $ name : ident ; impl V8Handler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_v8_handler ! { $ vis struct $ name { } impl V8Handler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl V8Handler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> V8Handler { V8Handler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapV8Handler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplV8Handler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_v8_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_v8_handler_t {
     use super::*;
     pub fn init_methods<I: ImplV8Handler, R: Rc>(object: &mut _cef_v8_handler_t) {
@@ -30163,7 +30166,7 @@ pub trait ImplV8Accessor: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapV8Accessor`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl V8Accessor` block you can override default\nmethods implemented by the [`ImplV8Accessor`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_v8_accessor! {\n    struct MyV8Accessor {\n        payload: String,\n    }\n\n    impl V8Accessor {\n        // ...\n    }\n}\n\nfn make_my_struct() -> V8Accessor {\n    MyV8Accessor::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_v8_accessor { ($ vis : vis struct $ name : ident ; impl V8Accessor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_v8_accessor ! { $ vis struct $ name { } impl V8Accessor { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl V8Accessor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_accessor_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> V8Accessor { V8Accessor :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapV8Accessor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_accessor_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplV8Accessor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_v8_accessor_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_v8_accessor { ($ vis : vis struct $ name : ident ; impl V8Accessor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_v8_accessor ! { $ vis struct $ name { } impl V8Accessor { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl V8Accessor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_accessor_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> V8Accessor { V8Accessor :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapV8Accessor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_accessor_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplV8Accessor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_v8_accessor_t { self . cef_object . cast () } } } ; }
 mod impl_cef_v8_accessor_t {
     use super::*;
     pub fn init_methods<I: ImplV8Accessor, R: Rc>(object: &mut _cef_v8_accessor_t) {
@@ -30448,7 +30451,7 @@ pub trait ImplV8Interceptor: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapV8Interceptor`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl V8Interceptor` block you can override default\nmethods implemented by the [`ImplV8Interceptor`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_v8_interceptor! {\n    struct MyV8Interceptor {\n        payload: String,\n    }\n\n    impl V8Interceptor {\n        // ...\n    }\n}\n\nfn make_my_struct() -> V8Interceptor {\n    MyV8Interceptor::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_v8_interceptor { ($ vis : vis struct $ name : ident ; impl V8Interceptor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_v8_interceptor ! { $ vis struct $ name { } impl V8Interceptor { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl V8Interceptor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_interceptor_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> V8Interceptor { V8Interceptor :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapV8Interceptor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_interceptor_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplV8Interceptor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_v8_interceptor_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_v8_interceptor { ($ vis : vis struct $ name : ident ; impl V8Interceptor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_v8_interceptor ! { $ vis struct $ name { } impl V8Interceptor { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl V8Interceptor { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_interceptor_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> V8Interceptor { V8Interceptor :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapV8Interceptor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_interceptor_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplV8Interceptor for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_v8_interceptor_t { self . cef_object . cast () } } } ; }
 mod impl_cef_v8_interceptor_t {
     use super::*;
     pub fn init_methods<I: ImplV8Interceptor, R: Rc>(object: &mut _cef_v8_interceptor_t) {
@@ -31010,7 +31013,7 @@ pub trait ImplV8ArrayBufferReleaseCallback: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapV8ArrayBufferReleaseCallback`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl V8ArrayBufferReleaseCallback` block you can override default\nmethods implemented by the [`ImplV8ArrayBufferReleaseCallback`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_v8_array_buffer_release_callback! {\n    struct MyV8ArrayBufferReleaseCallback {\n        payload: String,\n    }\n\n    impl V8ArrayBufferReleaseCallback {\n        // ...\n    }\n}\n\nfn make_my_struct() -> V8ArrayBufferReleaseCallback {\n    MyV8ArrayBufferReleaseCallback::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_v8_array_buffer_release_callback { ($ vis : vis struct $ name : ident ; impl V8ArrayBufferReleaseCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_v8_array_buffer_release_callback ! { $ vis struct $ name { } impl V8ArrayBufferReleaseCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl V8ArrayBufferReleaseCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_array_buffer_release_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> V8ArrayBufferReleaseCallback { V8ArrayBufferReleaseCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapV8ArrayBufferReleaseCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_array_buffer_release_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplV8ArrayBufferReleaseCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_v8_array_buffer_release_callback_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_v8_array_buffer_release_callback { ($ vis : vis struct $ name : ident ; impl V8ArrayBufferReleaseCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_v8_array_buffer_release_callback ! { $ vis struct $ name { } impl V8ArrayBufferReleaseCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl V8ArrayBufferReleaseCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_array_buffer_release_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> V8ArrayBufferReleaseCallback { V8ArrayBufferReleaseCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapV8ArrayBufferReleaseCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_v8_array_buffer_release_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplV8ArrayBufferReleaseCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_v8_array_buffer_release_callback_t { self . cef_object . cast () } } } ; }
 mod impl_cef_v8_array_buffer_release_callback_t {
     use super::*;
     pub fn init_methods<I: ImplV8ArrayBufferReleaseCallback, R: Rc>(
@@ -32415,7 +32418,7 @@ pub trait ImplRenderProcessHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapRenderProcessHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl RenderProcessHandler` block you can override default\nmethods implemented by the [`ImplRenderProcessHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_render_process_handler! {\n    struct MyRenderProcessHandler {\n        payload: String,\n    }\n\n    impl RenderProcessHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> RenderProcessHandler {\n    MyRenderProcessHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_render_process_handler { ($ vis : vis struct $ name : ident ; impl RenderProcessHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_render_process_handler ! { $ vis struct $ name { } impl RenderProcessHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl RenderProcessHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_render_process_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> RenderProcessHandler { RenderProcessHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapRenderProcessHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_render_process_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplRenderProcessHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_render_process_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_render_process_handler { ($ vis : vis struct $ name : ident ; impl RenderProcessHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_render_process_handler ! { $ vis struct $ name { } impl RenderProcessHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl RenderProcessHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_render_process_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> RenderProcessHandler { RenderProcessHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapRenderProcessHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_render_process_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplRenderProcessHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_render_process_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_render_process_handler_t {
     use super::*;
     pub fn init_methods<I: ImplRenderProcessHandler, R: Rc>(
@@ -32967,7 +32970,7 @@ pub trait ImplResourceBundleHandler: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapResourceBundleHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl ResourceBundleHandler` block you can override default\nmethods implemented by the [`ImplResourceBundleHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_resource_bundle_handler! {\n    struct MyResourceBundleHandler {\n        payload: String,\n    }\n\n    impl ResourceBundleHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> ResourceBundleHandler {\n    MyResourceBundleHandler::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_resource_bundle_handler { ($ vis : vis struct $ name : ident ; impl ResourceBundleHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_resource_bundle_handler ! { $ vis struct $ name { } impl ResourceBundleHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ResourceBundleHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resource_bundle_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> ResourceBundleHandler { ResourceBundleHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapResourceBundleHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resource_bundle_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplResourceBundleHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_resource_bundle_handler_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_resource_bundle_handler { ($ vis : vis struct $ name : ident ; impl ResourceBundleHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_resource_bundle_handler ! { $ vis struct $ name { } impl ResourceBundleHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ResourceBundleHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resource_bundle_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> ResourceBundleHandler { ResourceBundleHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapResourceBundleHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_resource_bundle_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplResourceBundleHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_resource_bundle_handler_t { self . cef_object . cast () } } } ; }
 mod impl_cef_resource_bundle_handler_t {
     use super::*;
     pub fn init_methods<I: ImplResourceBundleHandler, R: Rc>(
@@ -33321,7 +33324,7 @@ pub trait ImplSchemeHandlerFactory: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapSchemeHandlerFactory`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl SchemeHandlerFactory` block you can override default\nmethods implemented by the [`ImplSchemeHandlerFactory`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_scheme_handler_factory! {\n    struct MySchemeHandlerFactory {\n        payload: String,\n    }\n\n    impl SchemeHandlerFactory {\n        // ...\n    }\n}\n\nfn make_my_struct() -> SchemeHandlerFactory {\n    MySchemeHandlerFactory::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_scheme_handler_factory { ($ vis : vis struct $ name : ident ; impl SchemeHandlerFactory { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_scheme_handler_factory ! { $ vis struct $ name { } impl SchemeHandlerFactory { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl SchemeHandlerFactory { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_scheme_handler_factory_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> SchemeHandlerFactory { SchemeHandlerFactory :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapSchemeHandlerFactory for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_scheme_handler_factory_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplSchemeHandlerFactory for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_scheme_handler_factory_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_scheme_handler_factory { ($ vis : vis struct $ name : ident ; impl SchemeHandlerFactory { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_scheme_handler_factory ! { $ vis struct $ name { } impl SchemeHandlerFactory { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl SchemeHandlerFactory { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_scheme_handler_factory_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> SchemeHandlerFactory { SchemeHandlerFactory :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapSchemeHandlerFactory for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_scheme_handler_factory_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplSchemeHandlerFactory for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_scheme_handler_factory_t { self . cef_object . cast () } } } ; }
 mod impl_cef_scheme_handler_factory_t {
     use super::*;
     pub fn init_methods<I: ImplSchemeHandlerFactory, R: Rc>(
@@ -33505,7 +33508,7 @@ pub trait ImplApp: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapApp`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl App` block you can override default\nmethods implemented by the [`ImplApp`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_app! {\n    struct MyApp {\n        payload: String,\n    }\n\n    impl App {\n        // ...\n    }\n}\n\nfn make_my_struct() -> App {\n    MyApp::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_app { ($ vis : vis struct $ name : ident ; impl App { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_app ! { $ vis struct $ name { } impl App { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl App { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_app_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> App { App :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapApp for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_app_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplApp for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_app_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_app { ($ vis : vis struct $ name : ident ; impl App { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_app ! { $ vis struct $ name { } impl App { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl App { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_app_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> App { App :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapApp for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_app_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplApp for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_app_t { self . cef_object . cast () } } } ; }
 mod impl_cef_app_t {
     use super::*;
     pub fn init_methods<I: ImplApp, R: Rc>(object: &mut _cef_app_t) {
@@ -33697,6 +33700,1383 @@ impl ConvertReturnValue<App> for *mut _cef_app_t {
 impl From<App> for *mut _cef_app_t {
     fn from(value: App) -> Self {
         let object = ImplApp::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_resource_bundle_t`] for more documentation.
+#[derive(Clone)]
+pub struct ResourceBundle(RefGuard<_cef_resource_bundle_t>);
+pub trait ImplResourceBundle: Clone + Sized + Rc {
+    #[doc = "See [`_cef_resource_bundle_t::get_localized_string`] for more documentation."]
+    fn localized_string(&self, string_id: ::std::os::raw::c_int) -> CefStringUserfree;
+    #[doc = "See [`_cef_resource_bundle_t::get_data_resource`] for more documentation."]
+    fn data_resource(&self, resource_id: ::std::os::raw::c_int) -> Option<BinaryValue>;
+    #[doc = "See [`_cef_resource_bundle_t::get_data_resource_for_scale`] for more documentation."]
+    fn data_resource_for_scale(
+        &self,
+        resource_id: ::std::os::raw::c_int,
+        scale_factor: ScaleFactor,
+    ) -> Option<BinaryValue>;
+    fn get_raw(&self) -> *mut _cef_resource_bundle_t;
+}
+impl ImplResourceBundle for ResourceBundle {
+    fn localized_string(&self, string_id: ::std::os::raw::c_int) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_localized_string
+                .map(|f| {
+                    let arg_string_id = string_id;
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_, arg_string_id);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn data_resource(&self, resource_id: ::std::os::raw::c_int) -> Option<BinaryValue> {
+        unsafe {
+            self.0
+                .get_data_resource
+                .map(|f| {
+                    let arg_resource_id = resource_id;
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_, arg_resource_id);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn data_resource_for_scale(
+        &self,
+        resource_id: ::std::os::raw::c_int,
+        scale_factor: ScaleFactor,
+    ) -> Option<BinaryValue> {
+        unsafe {
+            self.0
+                .get_data_resource_for_scale
+                .map(|f| {
+                    let (arg_resource_id, arg_scale_factor) = (resource_id, scale_factor);
+                    let arg_self_ = self.into_raw();
+                    let arg_scale_factor = arg_scale_factor.into_raw();
+                    let result = f(arg_self_, arg_resource_id, arg_scale_factor);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_resource_bundle_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_resource_bundle_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for ResourceBundle {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_resource_bundle_t> for &ResourceBundle {
+    fn into_raw(self) -> *mut _cef_resource_bundle_t {
+        ImplResourceBundle::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_resource_bundle_t> for &mut ResourceBundle {
+    fn into_raw(self) -> *mut _cef_resource_bundle_t {
+        ImplResourceBundle::get_raw(self)
+    }
+}
+impl ConvertReturnValue<ResourceBundle> for *mut _cef_resource_bundle_t {
+    fn wrap_result(self) -> ResourceBundle {
+        ResourceBundle(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<ResourceBundle> for *mut _cef_resource_bundle_t {
+    fn from(value: ResourceBundle) -> Self {
+        let object = ImplResourceBundle::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_server_t`] for more documentation.
+#[derive(Clone)]
+pub struct Server(RefGuard<_cef_server_t>);
+pub trait ImplServer: Clone + Sized + Rc {
+    #[doc = "See [`_cef_server_t::get_task_runner`] for more documentation."]
+    fn task_runner(&self) -> Option<TaskRunner>;
+    #[doc = "See [`_cef_server_t::shutdown`] for more documentation."]
+    fn shutdown(&self);
+    #[doc = "See [`_cef_server_t::is_running`] for more documentation."]
+    fn is_running(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_server_t::get_address`] for more documentation."]
+    fn address(&self) -> CefStringUserfree;
+    #[doc = "See [`_cef_server_t::has_connection`] for more documentation."]
+    fn has_connection(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_server_t::is_valid_connection`] for more documentation."]
+    fn is_valid_connection(&self, connection_id: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_server_t::send_http200_response`] for more documentation."]
+    fn send_http200_response(
+        &self,
+        connection_id: ::std::os::raw::c_int,
+        content_type: Option<&CefString>,
+        data: Option<&[u8]>,
+    );
+    #[doc = "See [`_cef_server_t::send_http404_response`] for more documentation."]
+    fn send_http404_response(&self, connection_id: ::std::os::raw::c_int);
+    #[doc = "See [`_cef_server_t::send_http500_response`] for more documentation."]
+    fn send_http500_response(
+        &self,
+        connection_id: ::std::os::raw::c_int,
+        error_message: Option<&CefString>,
+    );
+    #[doc = "See [`_cef_server_t::send_http_response`] for more documentation."]
+    fn send_http_response(
+        &self,
+        connection_id: ::std::os::raw::c_int,
+        response_code: ::std::os::raw::c_int,
+        content_type: Option<&CefString>,
+        content_length: i64,
+        extra_headers: Option<&mut CefStringMultimap>,
+    );
+    #[doc = "See [`_cef_server_t::send_raw_data`] for more documentation."]
+    fn send_raw_data(&self, connection_id: ::std::os::raw::c_int, data: Option<&[u8]>);
+    #[doc = "See [`_cef_server_t::close_connection`] for more documentation."]
+    fn close_connection(&self, connection_id: ::std::os::raw::c_int);
+    #[doc = "See [`_cef_server_t::send_web_socket_message`] for more documentation."]
+    fn send_web_socket_message(&self, connection_id: ::std::os::raw::c_int, data: Option<&[u8]>);
+    fn get_raw(&self) -> *mut _cef_server_t;
+}
+impl ImplServer for Server {
+    fn task_runner(&self) -> Option<TaskRunner> {
+        unsafe {
+            self.0
+                .get_task_runner
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn shutdown(&self) {
+        unsafe {
+            if let Some(f) = self.0.shutdown {
+                let arg_self_ = self.into_raw();
+                f(arg_self_);
+            }
+        }
+    }
+    fn is_running(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .is_running
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn address(&self) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_address
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn has_connection(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .has_connection
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn is_valid_connection(&self, connection_id: ::std::os::raw::c_int) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .is_valid_connection
+                .map(|f| {
+                    let arg_connection_id = connection_id;
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_, arg_connection_id);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn send_http200_response(
+        &self,
+        connection_id: ::std::os::raw::c_int,
+        content_type: Option<&CefString>,
+        data: Option<&[u8]>,
+    ) {
+        unsafe {
+            if let Some(f) = self.0.send_http200_response {
+                let (arg_connection_id, arg_content_type, arg_data) =
+                    (connection_id, content_type, data);
+                let arg_self_ = self.into_raw();
+                let arg_content_type = arg_content_type
+                    .map(|arg| arg.into_raw())
+                    .unwrap_or(std::ptr::null());
+                let arg_data_size = arg_data.as_ref().map(|arg| arg.len()).unwrap_or_default();
+                let arg_data = arg_data
+                    .and_then(|arg| {
+                        if arg.is_empty() {
+                            None
+                        } else {
+                            Some(arg.as_ptr().cast())
+                        }
+                    })
+                    .unwrap_or(std::ptr::null());
+                f(
+                    arg_self_,
+                    arg_connection_id,
+                    arg_content_type,
+                    arg_data,
+                    arg_data_size,
+                );
+            }
+        }
+    }
+    fn send_http404_response(&self, connection_id: ::std::os::raw::c_int) {
+        unsafe {
+            if let Some(f) = self.0.send_http404_response {
+                let arg_connection_id = connection_id;
+                let arg_self_ = self.into_raw();
+                f(arg_self_, arg_connection_id);
+            }
+        }
+    }
+    fn send_http500_response(
+        &self,
+        connection_id: ::std::os::raw::c_int,
+        error_message: Option<&CefString>,
+    ) {
+        unsafe {
+            if let Some(f) = self.0.send_http500_response {
+                let (arg_connection_id, arg_error_message) = (connection_id, error_message);
+                let arg_self_ = self.into_raw();
+                let arg_error_message = arg_error_message
+                    .map(|arg| arg.into_raw())
+                    .unwrap_or(std::ptr::null());
+                f(arg_self_, arg_connection_id, arg_error_message);
+            }
+        }
+    }
+    fn send_http_response(
+        &self,
+        connection_id: ::std::os::raw::c_int,
+        response_code: ::std::os::raw::c_int,
+        content_type: Option<&CefString>,
+        content_length: i64,
+        extra_headers: Option<&mut CefStringMultimap>,
+    ) {
+        unsafe {
+            if let Some(f) = self.0.send_http_response {
+                let (
+                    arg_connection_id,
+                    arg_response_code,
+                    arg_content_type,
+                    arg_content_length,
+                    arg_extra_headers,
+                ) = (
+                    connection_id,
+                    response_code,
+                    content_type,
+                    content_length,
+                    extra_headers,
+                );
+                let arg_self_ = self.into_raw();
+                let arg_content_type = arg_content_type
+                    .map(|arg| arg.into_raw())
+                    .unwrap_or(std::ptr::null());
+                let arg_extra_headers = arg_extra_headers
+                    .map(|arg| arg.into_raw())
+                    .unwrap_or(std::ptr::null_mut());
+                f(
+                    arg_self_,
+                    arg_connection_id,
+                    arg_response_code,
+                    arg_content_type,
+                    arg_content_length,
+                    arg_extra_headers,
+                );
+            }
+        }
+    }
+    fn send_raw_data(&self, connection_id: ::std::os::raw::c_int, data: Option<&[u8]>) {
+        unsafe {
+            if let Some(f) = self.0.send_raw_data {
+                let (arg_connection_id, arg_data) = (connection_id, data);
+                let arg_self_ = self.into_raw();
+                let arg_data_size = arg_data.as_ref().map(|arg| arg.len()).unwrap_or_default();
+                let arg_data = arg_data
+                    .and_then(|arg| {
+                        if arg.is_empty() {
+                            None
+                        } else {
+                            Some(arg.as_ptr().cast())
+                        }
+                    })
+                    .unwrap_or(std::ptr::null());
+                f(arg_self_, arg_connection_id, arg_data, arg_data_size);
+            }
+        }
+    }
+    fn close_connection(&self, connection_id: ::std::os::raw::c_int) {
+        unsafe {
+            if let Some(f) = self.0.close_connection {
+                let arg_connection_id = connection_id;
+                let arg_self_ = self.into_raw();
+                f(arg_self_, arg_connection_id);
+            }
+        }
+    }
+    fn send_web_socket_message(&self, connection_id: ::std::os::raw::c_int, data: Option<&[u8]>) {
+        unsafe {
+            if let Some(f) = self.0.send_web_socket_message {
+                let (arg_connection_id, arg_data) = (connection_id, data);
+                let arg_self_ = self.into_raw();
+                let arg_data_size = arg_data.as_ref().map(|arg| arg.len()).unwrap_or_default();
+                let arg_data = arg_data
+                    .and_then(|arg| {
+                        if arg.is_empty() {
+                            None
+                        } else {
+                            Some(arg.as_ptr().cast())
+                        }
+                    })
+                    .unwrap_or(std::ptr::null());
+                f(arg_self_, arg_connection_id, arg_data, arg_data_size);
+            }
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_server_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_server_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for Server {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_server_t> for &Server {
+    fn into_raw(self) -> *mut _cef_server_t {
+        ImplServer::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_server_t> for &mut Server {
+    fn into_raw(self) -> *mut _cef_server_t {
+        ImplServer::get_raw(self)
+    }
+}
+impl ConvertReturnValue<Server> for *mut _cef_server_t {
+    fn wrap_result(self) -> Server {
+        Server(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<Server> for *mut _cef_server_t {
+    fn from(value: Server) -> Self {
+        let object = ImplServer::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_server_handler_t`] for more documentation.
+#[derive(Clone)]
+pub struct ServerHandler(RefGuard<_cef_server_handler_t>);
+impl ServerHandler {
+    pub fn new<T>(interface: T) -> Self
+    where
+        T: WrapServerHandler,
+    {
+        unsafe {
+            let mut cef_object = std::mem::zeroed();
+            <T as ImplServerHandler>::init_methods(&mut cef_object);
+            let object = RcImpl::new(cef_object, interface);
+            <T as WrapServerHandler>::wrap_rc(&mut (*object).interface, object);
+            let object: *mut _cef_server_handler_t = object.cast();
+            object.wrap_result()
+        }
+    }
+}
+pub trait WrapServerHandler: ImplServerHandler {
+    fn wrap_rc(&mut self, object: *mut RcImpl<_cef_server_handler_t, Self>);
+}
+pub trait ImplServerHandler: Clone + Sized + Rc {
+    #[doc = "See [`_cef_server_handler_t::on_server_created`] for more documentation."]
+    fn on_server_created(&self, server: Option<&mut Server>) {}
+    #[doc = "See [`_cef_server_handler_t::on_server_destroyed`] for more documentation."]
+    fn on_server_destroyed(&self, server: Option<&mut Server>) {}
+    #[doc = "See [`_cef_server_handler_t::on_client_connected`] for more documentation."]
+    fn on_client_connected(
+        &self,
+        server: Option<&mut Server>,
+        connection_id: ::std::os::raw::c_int,
+    ) {
+    }
+    #[doc = "See [`_cef_server_handler_t::on_client_disconnected`] for more documentation."]
+    fn on_client_disconnected(
+        &self,
+        server: Option<&mut Server>,
+        connection_id: ::std::os::raw::c_int,
+    ) {
+    }
+    #[doc = "See [`_cef_server_handler_t::on_http_request`] for more documentation."]
+    fn on_http_request(
+        &self,
+        server: Option<&mut Server>,
+        connection_id: ::std::os::raw::c_int,
+        client_address: Option<&CefString>,
+        request: Option<&mut Request>,
+    ) {
+    }
+    #[doc = "See [`_cef_server_handler_t::on_web_socket_request`] for more documentation."]
+    fn on_web_socket_request(
+        &self,
+        server: Option<&mut Server>,
+        connection_id: ::std::os::raw::c_int,
+        client_address: Option<&CefString>,
+        request: Option<&mut Request>,
+        callback: Option<&mut Callback>,
+    ) {
+    }
+    #[doc = "See [`_cef_server_handler_t::on_web_socket_connected`] for more documentation."]
+    fn on_web_socket_connected(
+        &self,
+        server: Option<&mut Server>,
+        connection_id: ::std::os::raw::c_int,
+    ) {
+    }
+    #[doc = "See [`_cef_server_handler_t::on_web_socket_message`] for more documentation."]
+    fn on_web_socket_message(
+        &self,
+        server: Option<&mut Server>,
+        connection_id: ::std::os::raw::c_int,
+        data: Option<&[u8]>,
+    ) {
+    }
+    fn init_methods(object: &mut _cef_server_handler_t) {
+        impl_cef_server_handler_t::init_methods::<Self, _cef_server_handler_t>(object);
+    }
+    fn get_raw(&self) -> *mut _cef_server_handler_t;
+}
+#[doc = "Implement the [`WrapServerHandler`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl ServerHandler` block you can override default\nmethods implemented by the [`ImplServerHandler`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_server_handler! {\n    struct MyServerHandler {\n        payload: String,\n    }\n\n    impl ServerHandler {\n        // ...\n    }\n}\n\nfn make_my_struct() -> ServerHandler {\n    MyServerHandler::new(\"payload\".to_string())\n}\n```"]
+#[macro_export]
+macro_rules ! wrap_server_handler { ($ vis : vis struct $ name : ident ; impl ServerHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_server_handler ! { $ vis struct $ name { } impl ServerHandler { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ServerHandler { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_server_handler_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> ServerHandler { ServerHandler :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapServerHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_server_handler_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplServerHandler for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_server_handler_t { self . cef_object . cast () } } } ; }
+mod impl_cef_server_handler_t {
+    use super::*;
+    pub fn init_methods<I: ImplServerHandler, R: Rc>(object: &mut _cef_server_handler_t) {
+        object.on_server_created = Some(on_server_created::<I, R>);
+        object.on_server_destroyed = Some(on_server_destroyed::<I, R>);
+        object.on_client_connected = Some(on_client_connected::<I, R>);
+        object.on_client_disconnected = Some(on_client_disconnected::<I, R>);
+        object.on_http_request = Some(on_http_request::<I, R>);
+        object.on_web_socket_request = Some(on_web_socket_request::<I, R>);
+        object.on_web_socket_connected = Some(on_web_socket_connected::<I, R>);
+        object.on_web_socket_message = Some(on_web_socket_message::<I, R>);
+    }
+    extern "C" fn on_server_created<I: ImplServerHandler, R: Rc>(
+        self_: *mut _cef_server_handler_t,
+        server: *mut _cef_server_t,
+    ) {
+        let (arg_self_, arg_server) = (self_, server);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_server =
+            unsafe { arg_server.as_mut() }.map(|arg| Server(unsafe { RefGuard::from_raw(arg) }));
+        let arg_server = arg_server.as_mut();
+        ImplServerHandler::on_server_created(&arg_self_.interface, arg_server)
+    }
+    extern "C" fn on_server_destroyed<I: ImplServerHandler, R: Rc>(
+        self_: *mut _cef_server_handler_t,
+        server: *mut _cef_server_t,
+    ) {
+        let (arg_self_, arg_server) = (self_, server);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_server =
+            unsafe { arg_server.as_mut() }.map(|arg| Server(unsafe { RefGuard::from_raw(arg) }));
+        let arg_server = arg_server.as_mut();
+        ImplServerHandler::on_server_destroyed(&arg_self_.interface, arg_server)
+    }
+    extern "C" fn on_client_connected<I: ImplServerHandler, R: Rc>(
+        self_: *mut _cef_server_handler_t,
+        server: *mut _cef_server_t,
+        connection_id: ::std::os::raw::c_int,
+    ) {
+        let (arg_self_, arg_server, arg_connection_id) = (self_, server, connection_id);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_server =
+            unsafe { arg_server.as_mut() }.map(|arg| Server(unsafe { RefGuard::from_raw(arg) }));
+        let arg_server = arg_server.as_mut();
+        let arg_connection_id = arg_connection_id.into_raw();
+        ImplServerHandler::on_client_connected(&arg_self_.interface, arg_server, arg_connection_id)
+    }
+    extern "C" fn on_client_disconnected<I: ImplServerHandler, R: Rc>(
+        self_: *mut _cef_server_handler_t,
+        server: *mut _cef_server_t,
+        connection_id: ::std::os::raw::c_int,
+    ) {
+        let (arg_self_, arg_server, arg_connection_id) = (self_, server, connection_id);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_server =
+            unsafe { arg_server.as_mut() }.map(|arg| Server(unsafe { RefGuard::from_raw(arg) }));
+        let arg_server = arg_server.as_mut();
+        let arg_connection_id = arg_connection_id.into_raw();
+        ImplServerHandler::on_client_disconnected(
+            &arg_self_.interface,
+            arg_server,
+            arg_connection_id,
+        )
+    }
+    extern "C" fn on_http_request<I: ImplServerHandler, R: Rc>(
+        self_: *mut _cef_server_handler_t,
+        server: *mut _cef_server_t,
+        connection_id: ::std::os::raw::c_int,
+        client_address: *const cef_string_t,
+        request: *mut _cef_request_t,
+    ) {
+        let (arg_self_, arg_server, arg_connection_id, arg_client_address, arg_request) =
+            (self_, server, connection_id, client_address, request);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_server =
+            unsafe { arg_server.as_mut() }.map(|arg| Server(unsafe { RefGuard::from_raw(arg) }));
+        let arg_server = arg_server.as_mut();
+        let arg_connection_id = arg_connection_id.into_raw();
+        let arg_client_address = if arg_client_address.is_null() {
+            None
+        } else {
+            Some(arg_client_address.into())
+        };
+        let arg_client_address = arg_client_address.as_ref();
+        let mut arg_request =
+            unsafe { arg_request.as_mut() }.map(|arg| Request(unsafe { RefGuard::from_raw(arg) }));
+        let arg_request = arg_request.as_mut();
+        ImplServerHandler::on_http_request(
+            &arg_self_.interface,
+            arg_server,
+            arg_connection_id,
+            arg_client_address,
+            arg_request,
+        )
+    }
+    extern "C" fn on_web_socket_request<I: ImplServerHandler, R: Rc>(
+        self_: *mut _cef_server_handler_t,
+        server: *mut _cef_server_t,
+        connection_id: ::std::os::raw::c_int,
+        client_address: *const cef_string_t,
+        request: *mut _cef_request_t,
+        callback: *mut _cef_callback_t,
+    ) {
+        let (
+            arg_self_,
+            arg_server,
+            arg_connection_id,
+            arg_client_address,
+            arg_request,
+            arg_callback,
+        ) = (
+            self_,
+            server,
+            connection_id,
+            client_address,
+            request,
+            callback,
+        );
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_server =
+            unsafe { arg_server.as_mut() }.map(|arg| Server(unsafe { RefGuard::from_raw(arg) }));
+        let arg_server = arg_server.as_mut();
+        let arg_connection_id = arg_connection_id.into_raw();
+        let arg_client_address = if arg_client_address.is_null() {
+            None
+        } else {
+            Some(arg_client_address.into())
+        };
+        let arg_client_address = arg_client_address.as_ref();
+        let mut arg_request =
+            unsafe { arg_request.as_mut() }.map(|arg| Request(unsafe { RefGuard::from_raw(arg) }));
+        let arg_request = arg_request.as_mut();
+        let mut arg_callback = unsafe { arg_callback.as_mut() }
+            .map(|arg| Callback(unsafe { RefGuard::from_raw(arg) }));
+        let arg_callback = arg_callback.as_mut();
+        ImplServerHandler::on_web_socket_request(
+            &arg_self_.interface,
+            arg_server,
+            arg_connection_id,
+            arg_client_address,
+            arg_request,
+            arg_callback,
+        )
+    }
+    extern "C" fn on_web_socket_connected<I: ImplServerHandler, R: Rc>(
+        self_: *mut _cef_server_handler_t,
+        server: *mut _cef_server_t,
+        connection_id: ::std::os::raw::c_int,
+    ) {
+        let (arg_self_, arg_server, arg_connection_id) = (self_, server, connection_id);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_server =
+            unsafe { arg_server.as_mut() }.map(|arg| Server(unsafe { RefGuard::from_raw(arg) }));
+        let arg_server = arg_server.as_mut();
+        let arg_connection_id = arg_connection_id.into_raw();
+        ImplServerHandler::on_web_socket_connected(
+            &arg_self_.interface,
+            arg_server,
+            arg_connection_id,
+        )
+    }
+    extern "C" fn on_web_socket_message<I: ImplServerHandler, R: Rc>(
+        self_: *mut _cef_server_handler_t,
+        server: *mut _cef_server_t,
+        connection_id: ::std::os::raw::c_int,
+        data: *const ::std::os::raw::c_void,
+        data_size: usize,
+    ) {
+        let (arg_self_, arg_server, arg_connection_id, arg_data, arg_data_size) =
+            (self_, server, connection_id, data, data_size);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_server =
+            unsafe { arg_server.as_mut() }.map(|arg| Server(unsafe { RefGuard::from_raw(arg) }));
+        let arg_server = arg_server.as_mut();
+        let arg_connection_id = arg_connection_id.into_raw();
+        let arg_data = (!arg_data.is_null() && arg_data_size > 0)
+            .then(|| unsafe { std::slice::from_raw_parts(arg_data.cast(), arg_data_size) });
+        ImplServerHandler::on_web_socket_message(
+            &arg_self_.interface,
+            arg_server,
+            arg_connection_id,
+            arg_data,
+        )
+    }
+}
+impl ImplServerHandler for ServerHandler {
+    fn on_server_created(&self, server: Option<&mut Server>) {
+        unsafe {
+            if let Some(f) = self.0.on_server_created {
+                let arg_server = server;
+                let arg_self_ = self.into_raw();
+                let arg_server = arg_server
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplServer::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_server);
+            }
+        }
+    }
+    fn on_server_destroyed(&self, server: Option<&mut Server>) {
+        unsafe {
+            if let Some(f) = self.0.on_server_destroyed {
+                let arg_server = server;
+                let arg_self_ = self.into_raw();
+                let arg_server = arg_server
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplServer::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_server);
+            }
+        }
+    }
+    fn on_client_connected(
+        &self,
+        server: Option<&mut Server>,
+        connection_id: ::std::os::raw::c_int,
+    ) {
+        unsafe {
+            if let Some(f) = self.0.on_client_connected {
+                let (arg_server, arg_connection_id) = (server, connection_id);
+                let arg_self_ = self.into_raw();
+                let arg_server = arg_server
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplServer::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_server, arg_connection_id);
+            }
+        }
+    }
+    fn on_client_disconnected(
+        &self,
+        server: Option<&mut Server>,
+        connection_id: ::std::os::raw::c_int,
+    ) {
+        unsafe {
+            if let Some(f) = self.0.on_client_disconnected {
+                let (arg_server, arg_connection_id) = (server, connection_id);
+                let arg_self_ = self.into_raw();
+                let arg_server = arg_server
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplServer::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_server, arg_connection_id);
+            }
+        }
+    }
+    fn on_http_request(
+        &self,
+        server: Option<&mut Server>,
+        connection_id: ::std::os::raw::c_int,
+        client_address: Option<&CefString>,
+        request: Option<&mut Request>,
+    ) {
+        unsafe {
+            if let Some(f) = self.0.on_http_request {
+                let (arg_server, arg_connection_id, arg_client_address, arg_request) =
+                    (server, connection_id, client_address, request);
+                let arg_self_ = self.into_raw();
+                let arg_server = arg_server
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplServer::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                let arg_client_address = arg_client_address
+                    .map(|arg| arg.into_raw())
+                    .unwrap_or(std::ptr::null());
+                let arg_request = arg_request
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplRequest::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(
+                    arg_self_,
+                    arg_server,
+                    arg_connection_id,
+                    arg_client_address,
+                    arg_request,
+                );
+            }
+        }
+    }
+    fn on_web_socket_request(
+        &self,
+        server: Option<&mut Server>,
+        connection_id: ::std::os::raw::c_int,
+        client_address: Option<&CefString>,
+        request: Option<&mut Request>,
+        callback: Option<&mut Callback>,
+    ) {
+        unsafe {
+            if let Some(f) = self.0.on_web_socket_request {
+                let (arg_server, arg_connection_id, arg_client_address, arg_request, arg_callback) =
+                    (server, connection_id, client_address, request, callback);
+                let arg_self_ = self.into_raw();
+                let arg_server = arg_server
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplServer::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                let arg_client_address = arg_client_address
+                    .map(|arg| arg.into_raw())
+                    .unwrap_or(std::ptr::null());
+                let arg_request = arg_request
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplRequest::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                let arg_callback = arg_callback
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplCallback::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(
+                    arg_self_,
+                    arg_server,
+                    arg_connection_id,
+                    arg_client_address,
+                    arg_request,
+                    arg_callback,
+                );
+            }
+        }
+    }
+    fn on_web_socket_connected(
+        &self,
+        server: Option<&mut Server>,
+        connection_id: ::std::os::raw::c_int,
+    ) {
+        unsafe {
+            if let Some(f) = self.0.on_web_socket_connected {
+                let (arg_server, arg_connection_id) = (server, connection_id);
+                let arg_self_ = self.into_raw();
+                let arg_server = arg_server
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplServer::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_server, arg_connection_id);
+            }
+        }
+    }
+    fn on_web_socket_message(
+        &self,
+        server: Option<&mut Server>,
+        connection_id: ::std::os::raw::c_int,
+        data: Option<&[u8]>,
+    ) {
+        unsafe {
+            if let Some(f) = self.0.on_web_socket_message {
+                let (arg_server, arg_connection_id, arg_data) = (server, connection_id, data);
+                let arg_self_ = self.into_raw();
+                let arg_server = arg_server
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplServer::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                let arg_data_size = arg_data.as_ref().map(|arg| arg.len()).unwrap_or_default();
+                let arg_data = arg_data
+                    .and_then(|arg| {
+                        if arg.is_empty() {
+                            None
+                        } else {
+                            Some(arg.as_ptr().cast())
+                        }
+                    })
+                    .unwrap_or(std::ptr::null());
+                f(
+                    arg_self_,
+                    arg_server,
+                    arg_connection_id,
+                    arg_data,
+                    arg_data_size,
+                );
+            }
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_server_handler_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_server_handler_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for ServerHandler {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_server_handler_t> for &ServerHandler {
+    fn into_raw(self) -> *mut _cef_server_handler_t {
+        ImplServerHandler::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_server_handler_t> for &mut ServerHandler {
+    fn into_raw(self) -> *mut _cef_server_handler_t {
+        ImplServerHandler::get_raw(self)
+    }
+}
+impl ConvertReturnValue<ServerHandler> for *mut _cef_server_handler_t {
+    fn wrap_result(self) -> ServerHandler {
+        ServerHandler(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<ServerHandler> for *mut _cef_server_handler_t {
+    fn from(value: ServerHandler) -> Self {
+        let object = ImplServerHandler::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_shared_process_message_builder_t`] for more documentation.
+#[derive(Clone)]
+pub struct SharedProcessMessageBuilder(RefGuard<_cef_shared_process_message_builder_t>);
+pub trait ImplSharedProcessMessageBuilder: Clone + Sized + Rc {
+    #[doc = "See [`_cef_shared_process_message_builder_t::is_valid`] for more documentation."]
+    fn is_valid(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_shared_process_message_builder_t::size`] for more documentation."]
+    fn size(&self) -> usize;
+    #[doc = "See [`_cef_shared_process_message_builder_t::memory`] for more documentation."]
+    fn memory(&self) -> *mut ::std::os::raw::c_void;
+    #[doc = "See [`_cef_shared_process_message_builder_t::build`] for more documentation."]
+    fn build(&self) -> Option<ProcessMessage>;
+    fn get_raw(&self) -> *mut _cef_shared_process_message_builder_t;
+}
+impl ImplSharedProcessMessageBuilder for SharedProcessMessageBuilder {
+    fn is_valid(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .is_valid
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn size(&self) -> usize {
+        unsafe {
+            self.0
+                .size
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn memory(&self) -> *mut ::std::os::raw::c_void {
+        unsafe {
+            self.0
+                .memory
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_else(|| std::mem::zeroed())
+        }
+    }
+    fn build(&self) -> Option<ProcessMessage> {
+        unsafe {
+            self.0
+                .build
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_shared_process_message_builder_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_shared_process_message_builder_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for SharedProcessMessageBuilder {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_shared_process_message_builder_t> for &SharedProcessMessageBuilder {
+    fn into_raw(self) -> *mut _cef_shared_process_message_builder_t {
+        ImplSharedProcessMessageBuilder::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_shared_process_message_builder_t> for &mut SharedProcessMessageBuilder {
+    fn into_raw(self) -> *mut _cef_shared_process_message_builder_t {
+        ImplSharedProcessMessageBuilder::get_raw(self)
+    }
+}
+impl ConvertReturnValue<SharedProcessMessageBuilder>
+    for *mut _cef_shared_process_message_builder_t
+{
+    fn wrap_result(self) -> SharedProcessMessageBuilder {
+        SharedProcessMessageBuilder(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<SharedProcessMessageBuilder> for *mut _cef_shared_process_message_builder_t {
+    fn from(value: SharedProcessMessageBuilder) -> Self {
+        let object = ImplSharedProcessMessageBuilder::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_task_manager_t`] for more documentation.
+#[derive(Clone)]
+pub struct TaskManager(RefGuard<_cef_task_manager_t>);
+pub trait ImplTaskManager: Clone + Sized + Rc {
+    #[doc = "See [`_cef_task_manager_t::get_tasks_count`] for more documentation."]
+    fn tasks_count(&self) -> usize;
+    #[doc = "See [`_cef_task_manager_t::get_task_ids_list`] for more documentation."]
+    fn task_ids_list(&self, task_ids: Option<&mut Vec<i64>>) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_task_manager_t::get_task_info`] for more documentation."]
+    fn task_info(&self, task_id: i64, info: Option<&mut TaskInfo>) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_task_manager_t::kill_task`] for more documentation."]
+    fn kill_task(&self, task_id: i64) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_task_manager_t::get_task_id_for_browser_id`] for more documentation."]
+    fn task_id_for_browser_id(&self, browser_id: ::std::os::raw::c_int) -> i64;
+    fn get_raw(&self) -> *mut _cef_task_manager_t;
+}
+impl ImplTaskManager for TaskManager {
+    fn tasks_count(&self) -> usize {
+        unsafe {
+            self.0
+                .get_tasks_count
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn task_ids_list(&self, task_ids: Option<&mut Vec<i64>>) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .get_task_ids_list
+                .map(|f| {
+                    let arg_task_ids = task_ids;
+                    let arg_self_ = self.into_raw();
+                    let mut out_task_ids_count = arg_task_ids
+                        .as_ref()
+                        .map(|arg| arg.len())
+                        .unwrap_or_default();
+                    let arg_task_ids_count = &mut out_task_ids_count;
+                    let out_task_ids = arg_task_ids;
+                    let mut vec_task_ids = out_task_ids
+                        .as_ref()
+                        .map(|arg| arg.to_vec())
+                        .unwrap_or_default();
+                    let arg_task_ids = if vec_task_ids.is_empty() {
+                        std::ptr::null_mut()
+                    } else {
+                        vec_task_ids.as_mut_ptr()
+                    };
+                    let result = f(arg_self_, arg_task_ids_count, arg_task_ids);
+                    if let Some(out_task_ids) = out_task_ids {
+                        *out_task_ids = vec_task_ids
+                            .into_iter()
+                            .take(out_task_ids_count)
+                            .map(|elem| elem.wrap_result())
+                            .collect();
+                    }
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn task_info(&self, task_id: i64, info: Option<&mut TaskInfo>) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .get_task_info
+                .map(|f| {
+                    let (arg_task_id, arg_info) = (task_id, info);
+                    let arg_self_ = self.into_raw();
+                    let mut arg_info = arg_info.cloned().map(|arg| arg.into());
+                    let arg_info = arg_info
+                        .as_mut()
+                        .map(std::ptr::from_mut)
+                        .unwrap_or(std::ptr::null_mut());
+                    let result = f(arg_self_, arg_task_id, arg_info);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn kill_task(&self, task_id: i64) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .kill_task
+                .map(|f| {
+                    let arg_task_id = task_id;
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_, arg_task_id);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn task_id_for_browser_id(&self, browser_id: ::std::os::raw::c_int) -> i64 {
+        unsafe {
+            self.0
+                .get_task_id_for_browser_id
+                .map(|f| {
+                    let arg_browser_id = browser_id;
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_, arg_browser_id);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_task_manager_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_task_manager_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for TaskManager {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_task_manager_t> for &TaskManager {
+    fn into_raw(self) -> *mut _cef_task_manager_t {
+        ImplTaskManager::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_task_manager_t> for &mut TaskManager {
+    fn into_raw(self) -> *mut _cef_task_manager_t {
+        ImplTaskManager::get_raw(self)
+    }
+}
+impl ConvertReturnValue<TaskManager> for *mut _cef_task_manager_t {
+    fn wrap_result(self) -> TaskManager {
+        TaskManager(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<TaskManager> for *mut _cef_task_manager_t {
+    fn from(value: TaskManager) -> Self {
+        let object = ImplTaskManager::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_thread_t`] for more documentation.
+#[derive(Clone)]
+pub struct Thread(RefGuard<_cef_thread_t>);
+pub trait ImplThread: Clone + Sized + Rc {
+    #[doc = "See [`_cef_thread_t::get_task_runner`] for more documentation."]
+    fn task_runner(&self) -> Option<TaskRunner>;
+    #[doc = "See [`_cef_thread_t::get_platform_thread_id`] for more documentation."]
+    fn platform_thread_id(&self) -> cef_platform_thread_id_t;
+    #[doc = "See [`_cef_thread_t::stop`] for more documentation."]
+    fn stop(&self);
+    #[doc = "See [`_cef_thread_t::is_running`] for more documentation."]
+    fn is_running(&self) -> ::std::os::raw::c_int;
+    fn get_raw(&self) -> *mut _cef_thread_t;
+}
+impl ImplThread for Thread {
+    fn task_runner(&self) -> Option<TaskRunner> {
+        unsafe {
+            self.0
+                .get_task_runner
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn platform_thread_id(&self) -> cef_platform_thread_id_t {
+        unsafe {
+            self.0
+                .get_platform_thread_id
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn stop(&self) {
+        unsafe {
+            if let Some(f) = self.0.stop {
+                let arg_self_ = self.into_raw();
+                f(arg_self_);
+            }
+        }
+    }
+    fn is_running(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .is_running
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_thread_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_thread_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for Thread {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_thread_t> for &Thread {
+    fn into_raw(self) -> *mut _cef_thread_t {
+        ImplThread::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_thread_t> for &mut Thread {
+    fn into_raw(self) -> *mut _cef_thread_t {
+        ImplThread::get_raw(self)
+    }
+}
+impl ConvertReturnValue<Thread> for *mut _cef_thread_t {
+    fn wrap_result(self) -> Thread {
+        Thread(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<Thread> for *mut _cef_thread_t {
+    fn from(value: Thread) -> Self {
+        let object = ImplThread::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_end_tracing_callback_t`] for more documentation.
+#[derive(Clone)]
+pub struct EndTracingCallback(RefGuard<_cef_end_tracing_callback_t>);
+impl EndTracingCallback {
+    pub fn new<T>(interface: T) -> Self
+    where
+        T: WrapEndTracingCallback,
+    {
+        unsafe {
+            let mut cef_object = std::mem::zeroed();
+            <T as ImplEndTracingCallback>::init_methods(&mut cef_object);
+            let object = RcImpl::new(cef_object, interface);
+            <T as WrapEndTracingCallback>::wrap_rc(&mut (*object).interface, object);
+            let object: *mut _cef_end_tracing_callback_t = object.cast();
+            object.wrap_result()
+        }
+    }
+}
+pub trait WrapEndTracingCallback: ImplEndTracingCallback {
+    fn wrap_rc(&mut self, object: *mut RcImpl<_cef_end_tracing_callback_t, Self>);
+}
+pub trait ImplEndTracingCallback: Clone + Sized + Rc {
+    #[doc = "See [`_cef_end_tracing_callback_t::on_end_tracing_complete`] for more documentation."]
+    fn on_end_tracing_complete(&self, tracing_file: Option<&CefString>) {}
+    fn init_methods(object: &mut _cef_end_tracing_callback_t) {
+        impl_cef_end_tracing_callback_t::init_methods::<Self, _cef_end_tracing_callback_t>(object);
+    }
+    fn get_raw(&self) -> *mut _cef_end_tracing_callback_t;
+}
+#[doc = "Implement the [`WrapEndTracingCallback`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl EndTracingCallback` block you can override default\nmethods implemented by the [`ImplEndTracingCallback`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_end_tracing_callback! {\n    struct MyEndTracingCallback {\n        payload: String,\n    }\n\n    impl EndTracingCallback {\n        // ...\n    }\n}\n\nfn make_my_struct() -> EndTracingCallback {\n    MyEndTracingCallback::new(\"payload\".to_string())\n}\n```"]
+#[macro_export]
+macro_rules ! wrap_end_tracing_callback { ($ vis : vis struct $ name : ident ; impl EndTracingCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_end_tracing_callback ! { $ vis struct $ name { } impl EndTracingCallback { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl EndTracingCallback { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_end_tracing_callback_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> EndTracingCallback { EndTracingCallback :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapEndTracingCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_end_tracing_callback_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplEndTracingCallback for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_end_tracing_callback_t { self . cef_object . cast () } } } ; }
+mod impl_cef_end_tracing_callback_t {
+    use super::*;
+    pub fn init_methods<I: ImplEndTracingCallback, R: Rc>(
+        object: &mut _cef_end_tracing_callback_t,
+    ) {
+        object.on_end_tracing_complete = Some(on_end_tracing_complete::<I, R>);
+    }
+    extern "C" fn on_end_tracing_complete<I: ImplEndTracingCallback, R: Rc>(
+        self_: *mut _cef_end_tracing_callback_t,
+        tracing_file: *const cef_string_t,
+    ) {
+        let (arg_self_, arg_tracing_file) = (self_, tracing_file);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let arg_tracing_file = if arg_tracing_file.is_null() {
+            None
+        } else {
+            Some(arg_tracing_file.into())
+        };
+        let arg_tracing_file = arg_tracing_file.as_ref();
+        ImplEndTracingCallback::on_end_tracing_complete(&arg_self_.interface, arg_tracing_file)
+    }
+}
+impl ImplEndTracingCallback for EndTracingCallback {
+    fn on_end_tracing_complete(&self, tracing_file: Option<&CefString>) {
+        unsafe {
+            if let Some(f) = self.0.on_end_tracing_complete {
+                let arg_tracing_file = tracing_file;
+                let arg_self_ = self.into_raw();
+                let arg_tracing_file = arg_tracing_file
+                    .map(|arg| arg.into_raw())
+                    .unwrap_or(std::ptr::null());
+                f(arg_self_, arg_tracing_file);
+            }
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_end_tracing_callback_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_end_tracing_callback_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for EndTracingCallback {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_end_tracing_callback_t> for &EndTracingCallback {
+    fn into_raw(self) -> *mut _cef_end_tracing_callback_t {
+        ImplEndTracingCallback::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_end_tracing_callback_t> for &mut EndTracingCallback {
+    fn into_raw(self) -> *mut _cef_end_tracing_callback_t {
+        ImplEndTracingCallback::get_raw(self)
+    }
+}
+impl ConvertReturnValue<EndTracingCallback> for *mut _cef_end_tracing_callback_t {
+    fn wrap_result(self) -> EndTracingCallback {
+        EndTracingCallback(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<EndTracingCallback> for *mut _cef_end_tracing_callback_t {
+    fn from(value: EndTracingCallback) -> Self {
+        let object = ImplEndTracingCallback::get_raw(&value);
         std::mem::forget(value);
         object
     }
@@ -33907,7 +35287,7 @@ pub trait ImplUrlrequestClient: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapUrlrequestClient`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl UrlrequestClient` block you can override default\nmethods implemented by the [`ImplUrlrequestClient`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_urlrequest_client! {\n    struct MyUrlrequestClient {\n        payload: String,\n    }\n\n    impl UrlrequestClient {\n        // ...\n    }\n}\n\nfn make_my_struct() -> UrlrequestClient {\n    MyUrlrequestClient::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_urlrequest_client { ($ vis : vis struct $ name : ident ; impl UrlrequestClient { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_urlrequest_client ! { $ vis struct $ name { } impl UrlrequestClient { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl UrlrequestClient { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_urlrequest_client_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> UrlrequestClient { UrlrequestClient :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapUrlrequestClient for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_urlrequest_client_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplUrlrequestClient for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_urlrequest_client_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_urlrequest_client { ($ vis : vis struct $ name : ident ; impl UrlrequestClient { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_urlrequest_client ! { $ vis struct $ name { } impl UrlrequestClient { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl UrlrequestClient { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_urlrequest_client_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> UrlrequestClient { UrlrequestClient :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapUrlrequestClient for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_urlrequest_client_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplUrlrequestClient for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_urlrequest_client_t { self . cef_object . cast () } } } ; }
 mod impl_cef_urlrequest_client_t {
     use super::*;
     pub fn init_methods<I: ImplUrlrequestClient, R: Rc>(object: &mut _cef_urlrequest_client_t) {
@@ -34184,6 +35564,847 @@ impl From<UrlrequestClient> for *mut _cef_urlrequest_client_t {
     }
 }
 
+/// See [`_cef_waitable_event_t`] for more documentation.
+#[derive(Clone)]
+pub struct WaitableEvent(RefGuard<_cef_waitable_event_t>);
+pub trait ImplWaitableEvent: Clone + Sized + Rc {
+    #[doc = "See [`_cef_waitable_event_t::reset`] for more documentation."]
+    fn reset(&self);
+    #[doc = "See [`_cef_waitable_event_t::signal`] for more documentation."]
+    fn signal(&self);
+    #[doc = "See [`_cef_waitable_event_t::is_signaled`] for more documentation."]
+    fn is_signaled(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_waitable_event_t::wait`] for more documentation."]
+    fn wait(&self);
+    #[doc = "See [`_cef_waitable_event_t::timed_wait`] for more documentation."]
+    fn timed_wait(&self, max_ms: i64) -> ::std::os::raw::c_int;
+    fn get_raw(&self) -> *mut _cef_waitable_event_t;
+}
+impl ImplWaitableEvent for WaitableEvent {
+    fn reset(&self) {
+        unsafe {
+            if let Some(f) = self.0.reset {
+                let arg_self_ = self.into_raw();
+                f(arg_self_);
+            }
+        }
+    }
+    fn signal(&self) {
+        unsafe {
+            if let Some(f) = self.0.signal {
+                let arg_self_ = self.into_raw();
+                f(arg_self_);
+            }
+        }
+    }
+    fn is_signaled(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .is_signaled
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn wait(&self) {
+        unsafe {
+            if let Some(f) = self.0.wait {
+                let arg_self_ = self.into_raw();
+                f(arg_self_);
+            }
+        }
+    }
+    fn timed_wait(&self, max_ms: i64) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .timed_wait
+                .map(|f| {
+                    let arg_max_ms = max_ms;
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_, arg_max_ms);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_waitable_event_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_waitable_event_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for WaitableEvent {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_waitable_event_t> for &WaitableEvent {
+    fn into_raw(self) -> *mut _cef_waitable_event_t {
+        ImplWaitableEvent::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_waitable_event_t> for &mut WaitableEvent {
+    fn into_raw(self) -> *mut _cef_waitable_event_t {
+        ImplWaitableEvent::get_raw(self)
+    }
+}
+impl ConvertReturnValue<WaitableEvent> for *mut _cef_waitable_event_t {
+    fn wrap_result(self) -> WaitableEvent {
+        WaitableEvent(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<WaitableEvent> for *mut _cef_waitable_event_t {
+    fn from(value: WaitableEvent) -> Self {
+        let object = ImplWaitableEvent::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_xml_reader_t`] for more documentation.
+#[derive(Clone)]
+pub struct XmlReader(RefGuard<_cef_xml_reader_t>);
+pub trait ImplXmlReader: Clone + Sized + Rc {
+    #[doc = "See [`_cef_xml_reader_t::move_to_next_node`] for more documentation."]
+    fn move_to_next_node(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_xml_reader_t::close`] for more documentation."]
+    fn close(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_xml_reader_t::has_error`] for more documentation."]
+    fn has_error(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_xml_reader_t::get_error`] for more documentation."]
+    fn error(&self) -> CefStringUserfree;
+    #[doc = "See [`_cef_xml_reader_t::get_type`] for more documentation."]
+    fn get_type(&self) -> XmlNodeType;
+    #[doc = "See [`_cef_xml_reader_t::get_depth`] for more documentation."]
+    fn depth(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_xml_reader_t::get_local_name`] for more documentation."]
+    fn local_name(&self) -> CefStringUserfree;
+    #[doc = "See [`_cef_xml_reader_t::get_prefix`] for more documentation."]
+    fn prefix(&self) -> CefStringUserfree;
+    #[doc = "See [`_cef_xml_reader_t::get_qualified_name`] for more documentation."]
+    fn qualified_name(&self) -> CefStringUserfree;
+    #[doc = "See [`_cef_xml_reader_t::get_namespace_uri`] for more documentation."]
+    fn namespace_uri(&self) -> CefStringUserfree;
+    #[doc = "See [`_cef_xml_reader_t::get_base_uri`] for more documentation."]
+    fn base_uri(&self) -> CefStringUserfree;
+    #[doc = "See [`_cef_xml_reader_t::get_xml_lang`] for more documentation."]
+    fn xml_lang(&self) -> CefStringUserfree;
+    #[doc = "See [`_cef_xml_reader_t::is_empty_element`] for more documentation."]
+    fn is_empty_element(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_xml_reader_t::has_value`] for more documentation."]
+    fn has_value(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_xml_reader_t::get_value`] for more documentation."]
+    fn value(&self) -> CefStringUserfree;
+    #[doc = "See [`_cef_xml_reader_t::has_attributes`] for more documentation."]
+    fn has_attributes(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_xml_reader_t::get_attribute_count`] for more documentation."]
+    fn attribute_count(&self) -> usize;
+    #[doc = "See [`_cef_xml_reader_t::get_attribute_byindex`] for more documentation."]
+    fn attribute_byindex(&self, index: ::std::os::raw::c_int) -> CefStringUserfree;
+    #[doc = "See [`_cef_xml_reader_t::get_attribute_byqname`] for more documentation."]
+    fn attribute_byqname(&self, qualified_name: Option<&CefString>) -> CefStringUserfree;
+    #[doc = "See [`_cef_xml_reader_t::get_attribute_bylname`] for more documentation."]
+    fn attribute_bylname(
+        &self,
+        local_name: Option<&CefString>,
+        namespace_uri: Option<&CefString>,
+    ) -> CefStringUserfree;
+    #[doc = "See [`_cef_xml_reader_t::get_inner_xml`] for more documentation."]
+    fn inner_xml(&self) -> CefStringUserfree;
+    #[doc = "See [`_cef_xml_reader_t::get_outer_xml`] for more documentation."]
+    fn outer_xml(&self) -> CefStringUserfree;
+    #[doc = "See [`_cef_xml_reader_t::get_line_number`] for more documentation."]
+    fn line_number(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_xml_reader_t::move_to_attribute_byindex`] for more documentation."]
+    fn move_to_attribute_byindex(&self, index: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_xml_reader_t::move_to_attribute_byqname`] for more documentation."]
+    fn move_to_attribute_byqname(
+        &self,
+        qualified_name: Option<&CefString>,
+    ) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_xml_reader_t::move_to_attribute_bylname`] for more documentation."]
+    fn move_to_attribute_bylname(
+        &self,
+        local_name: Option<&CefString>,
+        namespace_uri: Option<&CefString>,
+    ) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_xml_reader_t::move_to_first_attribute`] for more documentation."]
+    fn move_to_first_attribute(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_xml_reader_t::move_to_next_attribute`] for more documentation."]
+    fn move_to_next_attribute(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_xml_reader_t::move_to_carrying_element`] for more documentation."]
+    fn move_to_carrying_element(&self) -> ::std::os::raw::c_int;
+    fn get_raw(&self) -> *mut _cef_xml_reader_t;
+}
+impl ImplXmlReader for XmlReader {
+    fn move_to_next_node(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .move_to_next_node
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn close(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .close
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn has_error(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .has_error
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn error(&self) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_error
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_type(&self) -> XmlNodeType {
+        unsafe {
+            self.0
+                .get_type
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn depth(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .get_depth
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn local_name(&self) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_local_name
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn prefix(&self) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_prefix
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn qualified_name(&self) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_qualified_name
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn namespace_uri(&self) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_namespace_uri
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn base_uri(&self) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_base_uri
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn xml_lang(&self) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_xml_lang
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn is_empty_element(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .is_empty_element
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn has_value(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .has_value
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn value(&self) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_value
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn has_attributes(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .has_attributes
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn attribute_count(&self) -> usize {
+        unsafe {
+            self.0
+                .get_attribute_count
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn attribute_byindex(&self, index: ::std::os::raw::c_int) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_attribute_byindex
+                .map(|f| {
+                    let arg_index = index;
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_, arg_index);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn attribute_byqname(&self, qualified_name: Option<&CefString>) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_attribute_byqname
+                .map(|f| {
+                    let arg_qualified_name = qualified_name;
+                    let arg_self_ = self.into_raw();
+                    let arg_qualified_name = arg_qualified_name
+                        .map(|arg| arg.into_raw())
+                        .unwrap_or(std::ptr::null());
+                    let result = f(arg_self_, arg_qualified_name);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn attribute_bylname(
+        &self,
+        local_name: Option<&CefString>,
+        namespace_uri: Option<&CefString>,
+    ) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_attribute_bylname
+                .map(|f| {
+                    let (arg_local_name, arg_namespace_uri) = (local_name, namespace_uri);
+                    let arg_self_ = self.into_raw();
+                    let arg_local_name = arg_local_name
+                        .map(|arg| arg.into_raw())
+                        .unwrap_or(std::ptr::null());
+                    let arg_namespace_uri = arg_namespace_uri
+                        .map(|arg| arg.into_raw())
+                        .unwrap_or(std::ptr::null());
+                    let result = f(arg_self_, arg_local_name, arg_namespace_uri);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn inner_xml(&self) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_inner_xml
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn outer_xml(&self) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_outer_xml
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn line_number(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .get_line_number
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn move_to_attribute_byindex(&self, index: ::std::os::raw::c_int) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .move_to_attribute_byindex
+                .map(|f| {
+                    let arg_index = index;
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_, arg_index);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn move_to_attribute_byqname(
+        &self,
+        qualified_name: Option<&CefString>,
+    ) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .move_to_attribute_byqname
+                .map(|f| {
+                    let arg_qualified_name = qualified_name;
+                    let arg_self_ = self.into_raw();
+                    let arg_qualified_name = arg_qualified_name
+                        .map(|arg| arg.into_raw())
+                        .unwrap_or(std::ptr::null());
+                    let result = f(arg_self_, arg_qualified_name);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn move_to_attribute_bylname(
+        &self,
+        local_name: Option<&CefString>,
+        namespace_uri: Option<&CefString>,
+    ) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .move_to_attribute_bylname
+                .map(|f| {
+                    let (arg_local_name, arg_namespace_uri) = (local_name, namespace_uri);
+                    let arg_self_ = self.into_raw();
+                    let arg_local_name = arg_local_name
+                        .map(|arg| arg.into_raw())
+                        .unwrap_or(std::ptr::null());
+                    let arg_namespace_uri = arg_namespace_uri
+                        .map(|arg| arg.into_raw())
+                        .unwrap_or(std::ptr::null());
+                    let result = f(arg_self_, arg_local_name, arg_namespace_uri);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn move_to_first_attribute(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .move_to_first_attribute
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn move_to_next_attribute(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .move_to_next_attribute
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn move_to_carrying_element(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .move_to_carrying_element
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_xml_reader_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_xml_reader_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for XmlReader {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_xml_reader_t> for &XmlReader {
+    fn into_raw(self) -> *mut _cef_xml_reader_t {
+        ImplXmlReader::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_xml_reader_t> for &mut XmlReader {
+    fn into_raw(self) -> *mut _cef_xml_reader_t {
+        ImplXmlReader::get_raw(self)
+    }
+}
+impl ConvertReturnValue<XmlReader> for *mut _cef_xml_reader_t {
+    fn wrap_result(self) -> XmlReader {
+        XmlReader(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<XmlReader> for *mut _cef_xml_reader_t {
+    fn from(value: XmlReader) -> Self {
+        let object = ImplXmlReader::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_zip_reader_t`] for more documentation.
+#[derive(Clone)]
+pub struct ZipReader(RefGuard<_cef_zip_reader_t>);
+pub trait ImplZipReader: Clone + Sized + Rc {
+    #[doc = "See [`_cef_zip_reader_t::move_to_first_file`] for more documentation."]
+    fn move_to_first_file(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_zip_reader_t::move_to_next_file`] for more documentation."]
+    fn move_to_next_file(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_zip_reader_t::move_to_file`] for more documentation."]
+    fn move_to_file(
+        &self,
+        file_name: Option<&CefString>,
+        case_sensitive: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_zip_reader_t::close`] for more documentation."]
+    fn close(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_zip_reader_t::get_file_name`] for more documentation."]
+    fn file_name(&self) -> CefStringUserfree;
+    #[doc = "See [`_cef_zip_reader_t::get_file_size`] for more documentation."]
+    fn file_size(&self) -> i64;
+    #[doc = "See [`_cef_zip_reader_t::get_file_last_modified`] for more documentation."]
+    fn file_last_modified(&self) -> Basetime;
+    #[doc = "See [`_cef_zip_reader_t::open_file`] for more documentation."]
+    fn open_file(&self, password: Option<&CefString>) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_zip_reader_t::close_file`] for more documentation."]
+    fn close_file(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_zip_reader_t::read_file`] for more documentation."]
+    fn read_file(&self, buffer: Option<&mut Vec<u8>>) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_zip_reader_t::tell`] for more documentation."]
+    fn tell(&self) -> i64;
+    #[doc = "See [`_cef_zip_reader_t::eof`] for more documentation."]
+    fn eof(&self) -> ::std::os::raw::c_int;
+    fn get_raw(&self) -> *mut _cef_zip_reader_t;
+}
+impl ImplZipReader for ZipReader {
+    fn move_to_first_file(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .move_to_first_file
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn move_to_next_file(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .move_to_next_file
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn move_to_file(
+        &self,
+        file_name: Option<&CefString>,
+        case_sensitive: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .move_to_file
+                .map(|f| {
+                    let (arg_file_name, arg_case_sensitive) = (file_name, case_sensitive);
+                    let arg_self_ = self.into_raw();
+                    let arg_file_name = arg_file_name
+                        .map(|arg| arg.into_raw())
+                        .unwrap_or(std::ptr::null());
+                    let result = f(arg_self_, arg_file_name, arg_case_sensitive);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn close(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .close
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn file_name(&self) -> CefStringUserfree {
+        unsafe {
+            self.0
+                .get_file_name
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn file_size(&self) -> i64 {
+        unsafe {
+            self.0
+                .get_file_size
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn file_last_modified(&self) -> Basetime {
+        unsafe {
+            self.0
+                .get_file_last_modified
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn open_file(&self, password: Option<&CefString>) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .open_file
+                .map(|f| {
+                    let arg_password = password;
+                    let arg_self_ = self.into_raw();
+                    let arg_password = arg_password
+                        .map(|arg| arg.into_raw())
+                        .unwrap_or(std::ptr::null());
+                    let result = f(arg_self_, arg_password);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn close_file(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .close_file
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn read_file(&self, buffer: Option<&mut Vec<u8>>) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .read_file
+                .map(|f| {
+                    let arg_buffer = buffer;
+                    let arg_self_ = self.into_raw();
+                    let arg_buffer_size =
+                        arg_buffer.as_ref().map(|arg| arg.len()).unwrap_or_default();
+                    let mut out_buffer = arg_buffer;
+                    let arg_buffer = out_buffer
+                        .as_mut()
+                        .and_then(|arg| {
+                            if arg.is_empty() {
+                                None
+                            } else {
+                                Some(arg.as_mut_ptr().cast())
+                            }
+                        })
+                        .unwrap_or(std::ptr::null_mut());
+                    let result = f(arg_self_, arg_buffer, arg_buffer_size);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn tell(&self) -> i64 {
+        unsafe {
+            self.0
+                .tell
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn eof(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .eof
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_zip_reader_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_zip_reader_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for ZipReader {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_zip_reader_t> for &ZipReader {
+    fn into_raw(self) -> *mut _cef_zip_reader_t {
+        ImplZipReader::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_zip_reader_t> for &mut ZipReader {
+    fn into_raw(self) -> *mut _cef_zip_reader_t {
+        ImplZipReader::get_raw(self)
+    }
+}
+impl ConvertReturnValue<ZipReader> for *mut _cef_zip_reader_t {
+    fn wrap_result(self) -> ZipReader {
+        ZipReader(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<ZipReader> for *mut _cef_zip_reader_t {
+    fn from(value: ZipReader) -> Self {
+        let object = ImplZipReader::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
 /// See [`_cef_layout_t`] for more documentation.
 #[derive(Clone)]
 pub struct Layout(RefGuard<_cef_layout_t>);
@@ -34377,71 +36598,6 @@ impl From<BoxLayout> for *mut _cef_box_layout_t {
     }
 }
 
-/// See [`_cef_fill_layout_t`] for more documentation.
-#[derive(Clone)]
-pub struct FillLayout(RefGuard<_cef_fill_layout_t>);
-pub trait ImplFillLayout: ImplLayout {
-    fn get_raw(&self) -> *mut _cef_fill_layout_t {
-        <Self as ImplLayout>::get_raw(self).cast()
-    }
-}
-impl ImplLayout for FillLayout {
-    fn as_box_layout(&self) -> Option<BoxLayout> {
-        Layout::from(self).as_box_layout()
-    }
-    fn as_fill_layout(&self) -> Option<FillLayout> {
-        Layout::from(self).as_fill_layout()
-    }
-    fn is_valid(&self) -> ::std::os::raw::c_int {
-        Layout::from(self).is_valid()
-    }
-    fn get_raw(&self) -> *mut _cef_layout_t {
-        unsafe { RefGuard::into_raw(&self.0).cast() }
-    }
-}
-impl std::convert::From<&FillLayout> for Layout {
-    fn from(from: &FillLayout) -> Self {
-        Layout(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&from.0).cast()) })
-    }
-}
-impl ImplFillLayout for FillLayout {
-    fn get_raw(&self) -> *mut _cef_fill_layout_t {
-        unsafe { RefGuard::into_raw(&self.0) }
-    }
-}
-impl Rc for _cef_fill_layout_t {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.base.as_base()
-    }
-}
-impl Rc for FillLayout {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.0.as_base()
-    }
-}
-impl ConvertParam<*mut _cef_fill_layout_t> for &FillLayout {
-    fn into_raw(self) -> *mut _cef_fill_layout_t {
-        ImplFillLayout::get_raw(self)
-    }
-}
-impl ConvertParam<*mut _cef_fill_layout_t> for &mut FillLayout {
-    fn into_raw(self) -> *mut _cef_fill_layout_t {
-        ImplFillLayout::get_raw(self)
-    }
-}
-impl ConvertReturnValue<FillLayout> for *mut _cef_fill_layout_t {
-    fn wrap_result(self) -> FillLayout {
-        FillLayout(unsafe { RefGuard::from_raw(self) })
-    }
-}
-impl From<FillLayout> for *mut _cef_fill_layout_t {
-    fn from(value: FillLayout) -> Self {
-        let object = ImplFillLayout::get_raw(&value);
-        std::mem::forget(value);
-        object
-    }
-}
-
 /// See [`_cef_view_delegate_t`] for more documentation.
 #[derive(Clone)]
 pub struct ViewDelegate(RefGuard<_cef_view_delegate_t>);
@@ -34517,7 +36673,7 @@ pub trait ImplViewDelegate: Clone + Sized + Rc {
 }
 #[doc = "Implement the [`WrapViewDelegate`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl ViewDelegate` block you can override default\nmethods implemented by the [`ImplViewDelegate`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_view_delegate! {\n    struct MyViewDelegate {\n        payload: String,\n    }\n\n    impl ViewDelegate {\n        // ...\n    }\n}\n\nfn make_my_struct() -> ViewDelegate {\n    MyViewDelegate::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_view_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_view_delegate ! { $ vis struct $ name { } impl ViewDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_view_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> ViewDelegate { ViewDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_view_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_view_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_view_delegate ! { $ vis struct $ name { } impl ViewDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_view_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> ViewDelegate { ViewDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_view_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } } ; }
 mod impl_cef_view_delegate_t {
     use super::*;
     pub fn init_methods<I: ImplViewDelegate, R: Rc>(object: &mut _cef_view_delegate_t) {
@@ -34936,6 +37092,619 @@ impl ConvertReturnValue<ViewDelegate> for *mut _cef_view_delegate_t {
 impl From<ViewDelegate> for *mut _cef_view_delegate_t {
     fn from(value: ViewDelegate) -> Self {
         let object = ImplViewDelegate::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_browser_view_delegate_t`] for more documentation.
+#[derive(Clone)]
+pub struct BrowserViewDelegate(RefGuard<_cef_browser_view_delegate_t>);
+impl BrowserViewDelegate {
+    pub fn new<T>(interface: T) -> Self
+    where
+        T: WrapBrowserViewDelegate,
+    {
+        unsafe {
+            let mut cef_object = std::mem::zeroed();
+            <T as ImplBrowserViewDelegate>::init_methods(&mut cef_object);
+            let object = RcImpl::new(cef_object, interface);
+            <T as WrapBrowserViewDelegate>::wrap_rc(&mut (*object).interface, object);
+            let object: *mut _cef_browser_view_delegate_t = object.cast();
+            object.wrap_result()
+        }
+    }
+}
+pub trait WrapBrowserViewDelegate: ImplBrowserViewDelegate {
+    fn wrap_rc(&mut self, object: *mut RcImpl<_cef_browser_view_delegate_t, Self>);
+}
+pub trait ImplBrowserViewDelegate: ImplViewDelegate {
+    #[doc = "See [`_cef_browser_view_delegate_t::on_browser_created`] for more documentation."]
+    fn on_browser_created(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+        browser: Option<&mut Browser>,
+    ) {
+    }
+    #[doc = "See [`_cef_browser_view_delegate_t::on_browser_destroyed`] for more documentation."]
+    fn on_browser_destroyed(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+        browser: Option<&mut Browser>,
+    ) {
+    }
+    #[doc = "See [`_cef_browser_view_delegate_t::get_delegate_for_popup_browser_view`] for more documentation."]
+    fn delegate_for_popup_browser_view(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+        settings: Option<&BrowserSettings>,
+        client: Option<&mut Client>,
+        is_devtools: ::std::os::raw::c_int,
+    ) -> Option<BrowserViewDelegate> {
+        Default::default()
+    }
+    #[doc = "See [`_cef_browser_view_delegate_t::on_popup_browser_view_created`] for more documentation."]
+    fn on_popup_browser_view_created(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+        popup_browser_view: Option<&mut BrowserView>,
+        is_devtools: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int {
+        Default::default()
+    }
+    #[doc = "See [`_cef_browser_view_delegate_t::get_chrome_toolbar_type`] for more documentation."]
+    fn chrome_toolbar_type(&self, browser_view: Option<&mut BrowserView>) -> ChromeToolbarType {
+        Default::default()
+    }
+    #[doc = "See [`_cef_browser_view_delegate_t::use_frameless_window_for_picture_in_picture`] for more documentation."]
+    fn use_frameless_window_for_picture_in_picture(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+    ) -> ::std::os::raw::c_int {
+        Default::default()
+    }
+    #[doc = "See [`_cef_browser_view_delegate_t::on_gesture_command`] for more documentation."]
+    fn on_gesture_command(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+        gesture_command: GestureCommand,
+    ) -> ::std::os::raw::c_int {
+        Default::default()
+    }
+    #[doc = "See [`_cef_browser_view_delegate_t::get_browser_runtime_style`] for more documentation."]
+    fn browser_runtime_style(&self) -> RuntimeStyle {
+        Default::default()
+    }
+    #[doc = "See [`_cef_browser_view_delegate_t::allow_move_for_picture_in_picture`] for more documentation."]
+    fn allow_move_for_picture_in_picture(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+    ) -> ::std::os::raw::c_int {
+        Default::default()
+    }
+    fn init_methods(object: &mut _cef_browser_view_delegate_t) {
+        impl_cef_view_delegate_t::init_methods::<Self, _cef_browser_view_delegate_t>(
+            &mut object.base,
+        );
+        impl_cef_browser_view_delegate_t::init_methods::<Self, _cef_browser_view_delegate_t>(
+            object,
+        );
+    }
+    fn get_raw(&self) -> *mut _cef_browser_view_delegate_t {
+        <Self as ImplViewDelegate>::get_raw(self).cast()
+    }
+}
+#[doc = "Implement the [`WrapBrowserViewDelegate`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl BrowserViewDelegate` block you can override default\nmethods implemented by the [`ImplBrowserViewDelegate`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_browser_view_delegate! {\n    struct MyBrowserViewDelegate {\n        payload: String,\n    }\n\n    impl ViewDelegate {\n        // ...\n    }\n\n    impl BrowserViewDelegate {\n        // ...\n    }\n}\n\nfn make_my_struct() -> BrowserViewDelegate {\n    MyBrowserViewDelegate::new(\"payload\".to_string())\n}\n```"]
+#[macro_export]
+macro_rules ! wrap_browser_view_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl BrowserViewDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_browser_view_delegate ! { $ vis struct $ name { } impl BrowserViewDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl BrowserViewDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_browser_view_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> BrowserViewDelegate { BrowserViewDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapBrowserViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_browser_view_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_view_delegate_attrs_name]) * fn $ wrap_view_delegate_method_name (& $ wrap_view_delegate_self $ (, $ wrap_view_delegate_arg_name : $ wrap_view_delegate_arg_type) *) $ (-> $ wrap_view_delegate_return_type) ? { $ ($ wrap_view_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplBrowserViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_browser_view_delegate_t { self . cef_object . cast () } } } ; }
+mod impl_cef_browser_view_delegate_t {
+    use super::*;
+    pub fn init_methods<I: ImplBrowserViewDelegate, R: Rc>(
+        object: &mut _cef_browser_view_delegate_t,
+    ) {
+        object.on_browser_created = Some(on_browser_created::<I, R>);
+        object.on_browser_destroyed = Some(on_browser_destroyed::<I, R>);
+        object.get_delegate_for_popup_browser_view =
+            Some(get_delegate_for_popup_browser_view::<I, R>);
+        object.on_popup_browser_view_created = Some(on_popup_browser_view_created::<I, R>);
+        object.get_chrome_toolbar_type = Some(get_chrome_toolbar_type::<I, R>);
+        object.use_frameless_window_for_picture_in_picture =
+            Some(use_frameless_window_for_picture_in_picture::<I, R>);
+        object.on_gesture_command = Some(on_gesture_command::<I, R>);
+        object.get_browser_runtime_style = Some(get_browser_runtime_style::<I, R>);
+        object.allow_move_for_picture_in_picture = Some(allow_move_for_picture_in_picture::<I, R>);
+    }
+    extern "C" fn on_browser_created<I: ImplBrowserViewDelegate, R: Rc>(
+        self_: *mut _cef_browser_view_delegate_t,
+        browser_view: *mut _cef_browser_view_t,
+        browser: *mut _cef_browser_t,
+    ) {
+        let (arg_self_, arg_browser_view, arg_browser) = (self_, browser_view, browser);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
+            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser_view = arg_browser_view.as_mut();
+        let mut arg_browser =
+            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser = arg_browser.as_mut();
+        ImplBrowserViewDelegate::on_browser_created(
+            &arg_self_.interface,
+            arg_browser_view,
+            arg_browser,
+        )
+    }
+    extern "C" fn on_browser_destroyed<I: ImplBrowserViewDelegate, R: Rc>(
+        self_: *mut _cef_browser_view_delegate_t,
+        browser_view: *mut _cef_browser_view_t,
+        browser: *mut _cef_browser_t,
+    ) {
+        let (arg_self_, arg_browser_view, arg_browser) = (self_, browser_view, browser);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
+            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser_view = arg_browser_view.as_mut();
+        let mut arg_browser =
+            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser = arg_browser.as_mut();
+        ImplBrowserViewDelegate::on_browser_destroyed(
+            &arg_self_.interface,
+            arg_browser_view,
+            arg_browser,
+        )
+    }
+    extern "C" fn get_delegate_for_popup_browser_view<I: ImplBrowserViewDelegate, R: Rc>(
+        self_: *mut _cef_browser_view_delegate_t,
+        browser_view: *mut _cef_browser_view_t,
+        settings: *const _cef_browser_settings_t,
+        client: *mut _cef_client_t,
+        is_devtools: ::std::os::raw::c_int,
+    ) -> *mut _cef_browser_view_delegate_t {
+        let (arg_self_, arg_browser_view, arg_settings, arg_client, arg_is_devtools) =
+            (self_, browser_view, settings, client, is_devtools);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
+            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser_view = arg_browser_view.as_mut();
+        let arg_settings = if arg_settings.is_null() {
+            None
+        } else {
+            Some(WrapParamRef::<BrowserSettings, _>::from(arg_settings))
+        };
+        let arg_settings = arg_settings.as_ref().map(|arg| arg.as_ref());
+        let mut arg_client =
+            unsafe { arg_client.as_mut() }.map(|arg| Client(unsafe { RefGuard::from_raw(arg) }));
+        let arg_client = arg_client.as_mut();
+        let arg_is_devtools = arg_is_devtools.into_raw();
+        let result = ImplBrowserViewDelegate::delegate_for_popup_browser_view(
+            &arg_self_.interface,
+            arg_browser_view,
+            arg_settings,
+            arg_client,
+            arg_is_devtools,
+        );
+        result
+            .map(|result| result.into())
+            .unwrap_or(std::ptr::null_mut())
+    }
+    extern "C" fn on_popup_browser_view_created<I: ImplBrowserViewDelegate, R: Rc>(
+        self_: *mut _cef_browser_view_delegate_t,
+        browser_view: *mut _cef_browser_view_t,
+        popup_browser_view: *mut _cef_browser_view_t,
+        is_devtools: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int {
+        let (arg_self_, arg_browser_view, arg_popup_browser_view, arg_is_devtools) =
+            (self_, browser_view, popup_browser_view, is_devtools);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
+            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser_view = arg_browser_view.as_mut();
+        let mut arg_popup_browser_view = unsafe { arg_popup_browser_view.as_mut() }
+            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
+        let arg_popup_browser_view = arg_popup_browser_view.as_mut();
+        let arg_is_devtools = arg_is_devtools.into_raw();
+        ImplBrowserViewDelegate::on_popup_browser_view_created(
+            &arg_self_.interface,
+            arg_browser_view,
+            arg_popup_browser_view,
+            arg_is_devtools,
+        )
+    }
+    extern "C" fn get_chrome_toolbar_type<I: ImplBrowserViewDelegate, R: Rc>(
+        self_: *mut _cef_browser_view_delegate_t,
+        browser_view: *mut _cef_browser_view_t,
+    ) -> cef_chrome_toolbar_type_t {
+        let (arg_self_, arg_browser_view) = (self_, browser_view);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
+            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser_view = arg_browser_view.as_mut();
+        let result =
+            ImplBrowserViewDelegate::chrome_toolbar_type(&arg_self_.interface, arg_browser_view);
+        result.into()
+    }
+    extern "C" fn use_frameless_window_for_picture_in_picture<I: ImplBrowserViewDelegate, R: Rc>(
+        self_: *mut _cef_browser_view_delegate_t,
+        browser_view: *mut _cef_browser_view_t,
+    ) -> ::std::os::raw::c_int {
+        let (arg_self_, arg_browser_view) = (self_, browser_view);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
+            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser_view = arg_browser_view.as_mut();
+        ImplBrowserViewDelegate::use_frameless_window_for_picture_in_picture(
+            &arg_self_.interface,
+            arg_browser_view,
+        )
+    }
+    extern "C" fn on_gesture_command<I: ImplBrowserViewDelegate, R: Rc>(
+        self_: *mut _cef_browser_view_delegate_t,
+        browser_view: *mut _cef_browser_view_t,
+        gesture_command: cef_gesture_command_t,
+    ) -> ::std::os::raw::c_int {
+        let (arg_self_, arg_browser_view, arg_gesture_command) =
+            (self_, browser_view, gesture_command);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
+            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser_view = arg_browser_view.as_mut();
+        let arg_gesture_command = arg_gesture_command.into_raw();
+        ImplBrowserViewDelegate::on_gesture_command(
+            &arg_self_.interface,
+            arg_browser_view,
+            arg_gesture_command,
+        )
+    }
+    extern "C" fn get_browser_runtime_style<I: ImplBrowserViewDelegate, R: Rc>(
+        self_: *mut _cef_browser_view_delegate_t,
+    ) -> cef_runtime_style_t {
+        let arg_self_ = self_;
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let result = ImplBrowserViewDelegate::browser_runtime_style(&arg_self_.interface);
+        result.into()
+    }
+    extern "C" fn allow_move_for_picture_in_picture<I: ImplBrowserViewDelegate, R: Rc>(
+        self_: *mut _cef_browser_view_delegate_t,
+        browser_view: *mut _cef_browser_view_t,
+    ) -> ::std::os::raw::c_int {
+        let (arg_self_, arg_browser_view) = (self_, browser_view);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
+            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser_view = arg_browser_view.as_mut();
+        ImplBrowserViewDelegate::allow_move_for_picture_in_picture(
+            &arg_self_.interface,
+            arg_browser_view,
+        )
+    }
+}
+impl ImplViewDelegate for BrowserViewDelegate {
+    fn preferred_size(&self, view: Option<&mut View>) -> Size {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .preferred_size(view)
+    }
+    fn minimum_size(&self, view: Option<&mut View>) -> Size {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .minimum_size(view)
+    }
+    fn maximum_size(&self, view: Option<&mut View>) -> Size {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .maximum_size(view)
+    }
+    fn height_for_width(
+        &self,
+        view: Option<&mut View>,
+        width: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .height_for_width(view, width)
+    }
+    fn on_parent_view_changed(
+        &self,
+        view: Option<&mut View>,
+        added: ::std::os::raw::c_int,
+        parent: Option<&mut View>,
+    ) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_parent_view_changed(view, added, parent)
+    }
+    fn on_child_view_changed(
+        &self,
+        view: Option<&mut View>,
+        added: ::std::os::raw::c_int,
+        child: Option<&mut View>,
+    ) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_child_view_changed(view, added, child)
+    }
+    fn on_window_changed(&self, view: Option<&mut View>, added: ::std::os::raw::c_int) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_window_changed(view, added)
+    }
+    fn on_layout_changed(&self, view: Option<&mut View>, new_bounds: Option<&Rect>) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_layout_changed(view, new_bounds)
+    }
+    fn on_focus(&self, view: Option<&mut View>) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_focus(view)
+    }
+    fn on_blur(&self, view: Option<&mut View>) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_blur(view)
+    }
+    fn on_theme_changed(&self, view: Option<&mut View>) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_theme_changed(view)
+    }
+    fn get_raw(&self) -> *mut _cef_view_delegate_t {
+        unsafe { RefGuard::into_raw(&self.0).cast() }
+    }
+}
+impl ImplBrowserViewDelegate for BrowserViewDelegate {
+    fn on_browser_created(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+        browser: Option<&mut Browser>,
+    ) {
+        unsafe {
+            if let Some(f) = self.0.on_browser_created {
+                let (arg_browser_view, arg_browser) = (browser_view, browser);
+                let arg_self_ = self.into_raw();
+                let arg_browser_view = arg_browser_view
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplBrowserView::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                let arg_browser = arg_browser
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplBrowser::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_browser_view, arg_browser);
+            }
+        }
+    }
+    fn on_browser_destroyed(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+        browser: Option<&mut Browser>,
+    ) {
+        unsafe {
+            if let Some(f) = self.0.on_browser_destroyed {
+                let (arg_browser_view, arg_browser) = (browser_view, browser);
+                let arg_self_ = self.into_raw();
+                let arg_browser_view = arg_browser_view
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplBrowserView::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                let arg_browser = arg_browser
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplBrowser::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_browser_view, arg_browser);
+            }
+        }
+    }
+    fn delegate_for_popup_browser_view(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+        settings: Option<&BrowserSettings>,
+        client: Option<&mut Client>,
+        is_devtools: ::std::os::raw::c_int,
+    ) -> Option<BrowserViewDelegate> {
+        unsafe {
+            self.0
+                .get_delegate_for_popup_browser_view
+                .map(|f| {
+                    let (arg_browser_view, arg_settings, arg_client, arg_is_devtools) =
+                        (browser_view, settings, client, is_devtools);
+                    let arg_self_ = self.into_raw();
+                    let arg_browser_view = arg_browser_view
+                        .map(|arg| {
+                            arg.add_ref();
+                            ImplBrowserView::get_raw(arg)
+                        })
+                        .unwrap_or(std::ptr::null_mut());
+                    let arg_settings = arg_settings.cloned().map(|arg| arg.into());
+                    let arg_settings = arg_settings
+                        .as_ref()
+                        .map(std::ptr::from_ref)
+                        .unwrap_or(std::ptr::null());
+                    let arg_client = arg_client
+                        .map(|arg| {
+                            arg.add_ref();
+                            ImplClient::get_raw(arg)
+                        })
+                        .unwrap_or(std::ptr::null_mut());
+                    let result = f(
+                        arg_self_,
+                        arg_browser_view,
+                        arg_settings,
+                        arg_client,
+                        arg_is_devtools,
+                    );
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn on_popup_browser_view_created(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+        popup_browser_view: Option<&mut BrowserView>,
+        is_devtools: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .on_popup_browser_view_created
+                .map(|f| {
+                    let (arg_browser_view, arg_popup_browser_view, arg_is_devtools) =
+                        (browser_view, popup_browser_view, is_devtools);
+                    let arg_self_ = self.into_raw();
+                    let arg_browser_view = arg_browser_view
+                        .map(|arg| {
+                            arg.add_ref();
+                            ImplBrowserView::get_raw(arg)
+                        })
+                        .unwrap_or(std::ptr::null_mut());
+                    let arg_popup_browser_view = arg_popup_browser_view
+                        .map(|arg| {
+                            arg.add_ref();
+                            ImplBrowserView::get_raw(arg)
+                        })
+                        .unwrap_or(std::ptr::null_mut());
+                    let result = f(
+                        arg_self_,
+                        arg_browser_view,
+                        arg_popup_browser_view,
+                        arg_is_devtools,
+                    );
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn chrome_toolbar_type(&self, browser_view: Option<&mut BrowserView>) -> ChromeToolbarType {
+        unsafe {
+            self.0
+                .get_chrome_toolbar_type
+                .map(|f| {
+                    let arg_browser_view = browser_view;
+                    let arg_self_ = self.into_raw();
+                    let arg_browser_view = arg_browser_view
+                        .map(|arg| {
+                            arg.add_ref();
+                            ImplBrowserView::get_raw(arg)
+                        })
+                        .unwrap_or(std::ptr::null_mut());
+                    let result = f(arg_self_, arg_browser_view);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn use_frameless_window_for_picture_in_picture(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+    ) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .use_frameless_window_for_picture_in_picture
+                .map(|f| {
+                    let arg_browser_view = browser_view;
+                    let arg_self_ = self.into_raw();
+                    let arg_browser_view = arg_browser_view
+                        .map(|arg| {
+                            arg.add_ref();
+                            ImplBrowserView::get_raw(arg)
+                        })
+                        .unwrap_or(std::ptr::null_mut());
+                    let result = f(arg_self_, arg_browser_view);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn on_gesture_command(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+        gesture_command: GestureCommand,
+    ) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .on_gesture_command
+                .map(|f| {
+                    let (arg_browser_view, arg_gesture_command) = (browser_view, gesture_command);
+                    let arg_self_ = self.into_raw();
+                    let arg_browser_view = arg_browser_view
+                        .map(|arg| {
+                            arg.add_ref();
+                            ImplBrowserView::get_raw(arg)
+                        })
+                        .unwrap_or(std::ptr::null_mut());
+                    let arg_gesture_command = arg_gesture_command.into_raw();
+                    let result = f(arg_self_, arg_browser_view, arg_gesture_command);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn browser_runtime_style(&self) -> RuntimeStyle {
+        unsafe {
+            self.0
+                .get_browser_runtime_style
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn allow_move_for_picture_in_picture(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+    ) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .allow_move_for_picture_in_picture
+                .map(|f| {
+                    let arg_browser_view = browser_view;
+                    let arg_self_ = self.into_raw();
+                    let arg_browser_view = arg_browser_view
+                        .map(|arg| {
+                            arg.add_ref();
+                            ImplBrowserView::get_raw(arg)
+                        })
+                        .unwrap_or(std::ptr::null_mut());
+                    let result = f(arg_self_, arg_browser_view);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_browser_view_delegate_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_browser_view_delegate_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for BrowserViewDelegate {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_browser_view_delegate_t> for &BrowserViewDelegate {
+    fn into_raw(self) -> *mut _cef_browser_view_delegate_t {
+        ImplBrowserViewDelegate::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_browser_view_delegate_t> for &mut BrowserViewDelegate {
+    fn into_raw(self) -> *mut _cef_browser_view_delegate_t {
+        ImplBrowserViewDelegate::get_raw(self)
+    }
+}
+impl ConvertReturnValue<BrowserViewDelegate> for *mut _cef_browser_view_delegate_t {
+    fn wrap_result(self) -> BrowserViewDelegate {
+        BrowserViewDelegate(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<BrowserViewDelegate> for *mut _cef_browser_view_delegate_t {
+    fn from(value: BrowserViewDelegate) -> Self {
+        let object = ImplBrowserViewDelegate::get_raw(&value);
         std::mem::forget(value);
         object
     }
@@ -35802,6 +38571,287 @@ impl From<View> for *mut _cef_view_t {
     }
 }
 
+/// See [`_cef_browser_view_t`] for more documentation.
+#[derive(Clone)]
+pub struct BrowserView(RefGuard<_cef_browser_view_t>);
+pub trait ImplBrowserView: ImplView {
+    #[doc = "See [`_cef_browser_view_t::get_browser`] for more documentation."]
+    fn browser(&self) -> Option<Browser>;
+    #[doc = "See [`_cef_browser_view_t::get_chrome_toolbar`] for more documentation."]
+    fn chrome_toolbar(&self) -> Option<View>;
+    #[doc = "See [`_cef_browser_view_t::set_prefer_accelerators`] for more documentation."]
+    fn set_prefer_accelerators(&self, prefer_accelerators: ::std::os::raw::c_int);
+    #[doc = "See [`_cef_browser_view_t::get_runtime_style`] for more documentation."]
+    fn runtime_style(&self) -> RuntimeStyle;
+    fn get_raw(&self) -> *mut _cef_browser_view_t {
+        <Self as ImplView>::get_raw(self).cast()
+    }
+}
+impl ImplView for BrowserView {
+    fn as_browser_view(&self) -> Option<BrowserView> {
+        View::from(self).as_browser_view()
+    }
+    fn as_button(&self) -> Option<Button> {
+        View::from(self).as_button()
+    }
+    fn as_panel(&self) -> Option<Panel> {
+        View::from(self).as_panel()
+    }
+    fn as_scroll_view(&self) -> Option<ScrollView> {
+        View::from(self).as_scroll_view()
+    }
+    fn as_textfield(&self) -> Option<Textfield> {
+        View::from(self).as_textfield()
+    }
+    fn type_string(&self) -> CefStringUserfree {
+        View::from(self).type_string()
+    }
+    fn to_string(&self, include_children: ::std::os::raw::c_int) -> CefStringUserfree {
+        View::from(self).to_string(include_children)
+    }
+    fn is_valid(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_valid()
+    }
+    fn is_attached(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_attached()
+    }
+    fn is_same(&self, that: Option<&mut View>) -> ::std::os::raw::c_int {
+        View::from(self).is_same(that)
+    }
+    fn delegate(&self) -> Option<ViewDelegate> {
+        View::from(self).delegate()
+    }
+    fn window(&self) -> Option<Window> {
+        View::from(self).window()
+    }
+    fn id(&self) -> ::std::os::raw::c_int {
+        View::from(self).id()
+    }
+    fn set_id(&self, id: ::std::os::raw::c_int) {
+        View::from(self).set_id(id)
+    }
+    fn group_id(&self) -> ::std::os::raw::c_int {
+        View::from(self).group_id()
+    }
+    fn set_group_id(&self, group_id: ::std::os::raw::c_int) {
+        View::from(self).set_group_id(group_id)
+    }
+    fn parent_view(&self) -> Option<View> {
+        View::from(self).parent_view()
+    }
+    fn view_for_id(&self, id: ::std::os::raw::c_int) -> Option<View> {
+        View::from(self).view_for_id(id)
+    }
+    fn set_bounds(&self, bounds: Option<&Rect>) {
+        View::from(self).set_bounds(bounds)
+    }
+    fn bounds(&self) -> Rect {
+        View::from(self).bounds()
+    }
+    fn bounds_in_screen(&self) -> Rect {
+        View::from(self).bounds_in_screen()
+    }
+    fn set_size(&self, size: Option<&Size>) {
+        View::from(self).set_size(size)
+    }
+    fn size(&self) -> Size {
+        View::from(self).size()
+    }
+    fn set_position(&self, position: Option<&Point>) {
+        View::from(self).set_position(position)
+    }
+    fn position(&self) -> Point {
+        View::from(self).position()
+    }
+    fn set_insets(&self, insets: Option<&Insets>) {
+        View::from(self).set_insets(insets)
+    }
+    fn insets(&self) -> Insets {
+        View::from(self).insets()
+    }
+    fn preferred_size(&self) -> Size {
+        View::from(self).preferred_size()
+    }
+    fn size_to_preferred_size(&self) {
+        View::from(self).size_to_preferred_size()
+    }
+    fn minimum_size(&self) -> Size {
+        View::from(self).minimum_size()
+    }
+    fn maximum_size(&self) -> Size {
+        View::from(self).maximum_size()
+    }
+    fn height_for_width(&self, width: ::std::os::raw::c_int) -> ::std::os::raw::c_int {
+        View::from(self).height_for_width(width)
+    }
+    fn invalidate_layout(&self) {
+        View::from(self).invalidate_layout()
+    }
+    fn set_visible(&self, visible: ::std::os::raw::c_int) {
+        View::from(self).set_visible(visible)
+    }
+    fn is_visible(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_visible()
+    }
+    fn is_drawn(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_drawn()
+    }
+    fn set_enabled(&self, enabled: ::std::os::raw::c_int) {
+        View::from(self).set_enabled(enabled)
+    }
+    fn is_enabled(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_enabled()
+    }
+    fn set_focusable(&self, focusable: ::std::os::raw::c_int) {
+        View::from(self).set_focusable(focusable)
+    }
+    fn is_focusable(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_focusable()
+    }
+    fn is_accessibility_focusable(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_accessibility_focusable()
+    }
+    fn has_focus(&self) -> ::std::os::raw::c_int {
+        View::from(self).has_focus()
+    }
+    fn request_focus(&self) {
+        View::from(self).request_focus()
+    }
+    fn set_background_color(&self, color: u32) {
+        View::from(self).set_background_color(color)
+    }
+    fn background_color(&self) -> cef_color_t {
+        View::from(self).background_color()
+    }
+    fn theme_color(&self, color_id: ::std::os::raw::c_int) -> cef_color_t {
+        View::from(self).theme_color(color_id)
+    }
+    fn convert_point_to_screen(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_to_screen(point)
+    }
+    fn convert_point_from_screen(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_from_screen(point)
+    }
+    fn convert_point_to_window(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_to_window(point)
+    }
+    fn convert_point_from_window(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_from_window(point)
+    }
+    fn convert_point_to_view(
+        &self,
+        view: Option<&mut View>,
+        point: Option<&mut Point>,
+    ) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_to_view(view, point)
+    }
+    fn convert_point_from_view(
+        &self,
+        view: Option<&mut View>,
+        point: Option<&mut Point>,
+    ) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_from_view(view, point)
+    }
+    fn get_raw(&self) -> *mut _cef_view_t {
+        unsafe { RefGuard::into_raw(&self.0).cast() }
+    }
+}
+impl std::convert::From<&BrowserView> for View {
+    fn from(from: &BrowserView) -> Self {
+        View(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&from.0).cast()) })
+    }
+}
+impl ImplBrowserView for BrowserView {
+    fn browser(&self) -> Option<Browser> {
+        unsafe {
+            self.0
+                .get_browser
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn chrome_toolbar(&self) -> Option<View> {
+        unsafe {
+            self.0
+                .get_chrome_toolbar
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn set_prefer_accelerators(&self, prefer_accelerators: ::std::os::raw::c_int) {
+        unsafe {
+            if let Some(f) = self.0.set_prefer_accelerators {
+                let arg_prefer_accelerators = prefer_accelerators;
+                let arg_self_ = self.into_raw();
+                f(arg_self_, arg_prefer_accelerators);
+            }
+        }
+    }
+    fn runtime_style(&self) -> RuntimeStyle {
+        unsafe {
+            self.0
+                .get_runtime_style
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_browser_view_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_browser_view_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for BrowserView {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_browser_view_t> for &BrowserView {
+    fn into_raw(self) -> *mut _cef_browser_view_t {
+        ImplBrowserView::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_browser_view_t> for &mut BrowserView {
+    fn into_raw(self) -> *mut _cef_browser_view_t {
+        ImplBrowserView::get_raw(self)
+    }
+}
+impl ConvertReturnValue<BrowserView> for *mut _cef_browser_view_t {
+    fn wrap_result(self) -> BrowserView {
+        BrowserView(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<BrowserView> for *mut _cef_browser_view_t {
+    fn from(value: BrowserView) -> Self {
+        let object = ImplBrowserView::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
 /// See [`_cef_button_t`] for more documentation.
 #[derive(Clone)]
 pub struct Button(RefGuard<_cef_button_t>);
@@ -36141,7 +39191,7 @@ pub trait ImplButtonDelegate: ImplViewDelegate {
 }
 #[doc = "Implement the [`WrapButtonDelegate`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl ButtonDelegate` block you can override default\nmethods implemented by the [`ImplButtonDelegate`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_button_delegate! {\n    struct MyButtonDelegate {\n        payload: String,\n    }\n\n    impl ViewDelegate {\n        // ...\n    }\n\n    impl ButtonDelegate {\n        // ...\n    }\n}\n\nfn make_my_struct() -> ButtonDelegate {\n    MyButtonDelegate::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_button_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl ButtonDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_button_delegate ! { $ vis struct $ name { } impl ButtonDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl ButtonDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_button_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> ButtonDelegate { ButtonDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapButtonDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_button_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_view_delegate_attrs_name]) * fn $ wrap_view_delegate_method_name (& $ wrap_view_delegate_self $ (, $ wrap_view_delegate_arg_name : $ wrap_view_delegate_arg_type) *) $ (-> $ wrap_view_delegate_return_type) ? { $ ($ wrap_view_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplButtonDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_button_delegate_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_button_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl ButtonDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_button_delegate ! { $ vis struct $ name { } impl ButtonDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl ButtonDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_button_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> ButtonDelegate { ButtonDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapButtonDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_button_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_view_delegate_attrs_name]) * fn $ wrap_view_delegate_method_name (& $ wrap_view_delegate_self $ (, $ wrap_view_delegate_arg_name : $ wrap_view_delegate_arg_type) *) $ (-> $ wrap_view_delegate_return_type) ? { $ ($ wrap_view_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplButtonDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_button_delegate_t { self . cef_object . cast () } } } ; }
 mod impl_cef_button_delegate_t {
     use super::*;
     pub fn init_methods<I: ImplButtonDelegate, R: Rc>(object: &mut _cef_button_delegate_t) {
@@ -36297,6 +39347,217 @@ impl ConvertReturnValue<ButtonDelegate> for *mut _cef_button_delegate_t {
 impl From<ButtonDelegate> for *mut _cef_button_delegate_t {
     fn from(value: ButtonDelegate) -> Self {
         let object = ImplButtonDelegate::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_display_t`] for more documentation.
+#[derive(Clone)]
+pub struct Display(RefGuard<_cef_display_t>);
+pub trait ImplDisplay: Clone + Sized + Rc {
+    #[doc = "See [`_cef_display_t::get_id`] for more documentation."]
+    fn id(&self) -> i64;
+    #[doc = "See [`_cef_display_t::get_device_scale_factor`] for more documentation."]
+    fn device_scale_factor(&self) -> f32;
+    #[doc = "See [`_cef_display_t::convert_point_to_pixels`] for more documentation."]
+    fn convert_point_to_pixels(&self, point: Option<&mut Point>);
+    #[doc = "See [`_cef_display_t::convert_point_from_pixels`] for more documentation."]
+    fn convert_point_from_pixels(&self, point: Option<&mut Point>);
+    #[doc = "See [`_cef_display_t::get_bounds`] for more documentation."]
+    fn bounds(&self) -> Rect;
+    #[doc = "See [`_cef_display_t::get_work_area`] for more documentation."]
+    fn work_area(&self) -> Rect;
+    #[doc = "See [`_cef_display_t::get_rotation`] for more documentation."]
+    fn rotation(&self) -> ::std::os::raw::c_int;
+    fn get_raw(&self) -> *mut _cef_display_t;
+}
+impl ImplDisplay for Display {
+    fn id(&self) -> i64 {
+        unsafe {
+            self.0
+                .get_id
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn device_scale_factor(&self) -> f32 {
+        unsafe {
+            self.0
+                .get_device_scale_factor
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn convert_point_to_pixels(&self, point: Option<&mut Point>) {
+        unsafe {
+            if let Some(f) = self.0.convert_point_to_pixels {
+                let arg_point = point;
+                let arg_self_ = self.into_raw();
+                let mut arg_point = arg_point.cloned().map(|arg| arg.into());
+                let arg_point = arg_point
+                    .as_mut()
+                    .map(std::ptr::from_mut)
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_point);
+            }
+        }
+    }
+    fn convert_point_from_pixels(&self, point: Option<&mut Point>) {
+        unsafe {
+            if let Some(f) = self.0.convert_point_from_pixels {
+                let arg_point = point;
+                let arg_self_ = self.into_raw();
+                let mut arg_point = arg_point.cloned().map(|arg| arg.into());
+                let arg_point = arg_point
+                    .as_mut()
+                    .map(std::ptr::from_mut)
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_point);
+            }
+        }
+    }
+    fn bounds(&self) -> Rect {
+        unsafe {
+            self.0
+                .get_bounds
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn work_area(&self) -> Rect {
+        unsafe {
+            self.0
+                .get_work_area
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn rotation(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .get_rotation
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_display_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_display_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for Display {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_display_t> for &Display {
+    fn into_raw(self) -> *mut _cef_display_t {
+        ImplDisplay::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_display_t> for &mut Display {
+    fn into_raw(self) -> *mut _cef_display_t {
+        ImplDisplay::get_raw(self)
+    }
+}
+impl ConvertReturnValue<Display> for *mut _cef_display_t {
+    fn wrap_result(self) -> Display {
+        Display(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<Display> for *mut _cef_display_t {
+    fn from(value: Display) -> Self {
+        let object = ImplDisplay::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_fill_layout_t`] for more documentation.
+#[derive(Clone)]
+pub struct FillLayout(RefGuard<_cef_fill_layout_t>);
+pub trait ImplFillLayout: ImplLayout {
+    fn get_raw(&self) -> *mut _cef_fill_layout_t {
+        <Self as ImplLayout>::get_raw(self).cast()
+    }
+}
+impl ImplLayout for FillLayout {
+    fn as_box_layout(&self) -> Option<BoxLayout> {
+        Layout::from(self).as_box_layout()
+    }
+    fn as_fill_layout(&self) -> Option<FillLayout> {
+        Layout::from(self).as_fill_layout()
+    }
+    fn is_valid(&self) -> ::std::os::raw::c_int {
+        Layout::from(self).is_valid()
+    }
+    fn get_raw(&self) -> *mut _cef_layout_t {
+        unsafe { RefGuard::into_raw(&self.0).cast() }
+    }
+}
+impl std::convert::From<&FillLayout> for Layout {
+    fn from(from: &FillLayout) -> Self {
+        Layout(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&from.0).cast()) })
+    }
+}
+impl ImplFillLayout for FillLayout {
+    fn get_raw(&self) -> *mut _cef_fill_layout_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_fill_layout_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for FillLayout {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_fill_layout_t> for &FillLayout {
+    fn into_raw(self) -> *mut _cef_fill_layout_t {
+        ImplFillLayout::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_fill_layout_t> for &mut FillLayout {
+    fn into_raw(self) -> *mut _cef_fill_layout_t {
+        ImplFillLayout::get_raw(self)
+    }
+}
+impl ConvertReturnValue<FillLayout> for *mut _cef_fill_layout_t {
+    fn wrap_result(self) -> FillLayout {
+        FillLayout(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<FillLayout> for *mut _cef_fill_layout_t {
+    fn from(value: FillLayout) -> Self {
+        let object = ImplFillLayout::get_raw(&value);
         std::mem::forget(value);
         object
     }
@@ -36804,7 +40065,7 @@ pub trait ImplMenuButtonDelegate: ImplButtonDelegate {
 }
 #[doc = "Implement the [`WrapMenuButtonDelegate`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl MenuButtonDelegate` block you can override default\nmethods implemented by the [`ImplMenuButtonDelegate`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_menu_button_delegate! {\n    struct MyMenuButtonDelegate {\n        payload: String,\n    }\n\n    impl ViewDelegate {\n        // ...\n    }\n\n    impl ButtonDelegate {\n        // ...\n    }\n\n    impl MenuButtonDelegate {\n        // ...\n    }\n}\n\nfn make_my_struct() -> MenuButtonDelegate {\n    MyMenuButtonDelegate::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_menu_button_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl ButtonDelegate { $ ($ (# [$ wrap_button_delegate_attrs_name : meta]) * fn $ wrap_button_delegate_method_name : ident (& $ wrap_button_delegate_self : ident $ (, $ wrap_button_delegate_arg_name : ident : $ wrap_button_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_button_delegate_return_type : ty) ? { $ ($ wrap_button_delegate_body : tt) * }) * } impl MenuButtonDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_menu_button_delegate ! { $ vis struct $ name { } impl MenuButtonDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl ButtonDelegate { $ ($ (# [$ wrap_button_delegate_attrs_name : meta]) * fn $ wrap_button_delegate_method_name : ident (& $ wrap_button_delegate_self : ident $ (, $ wrap_button_delegate_arg_name : ident : $ wrap_button_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_button_delegate_return_type : ty) ? { $ ($ wrap_button_delegate_body : tt) * }) * } impl MenuButtonDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_menu_button_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> MenuButtonDelegate { MenuButtonDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapMenuButtonDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_menu_button_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_view_delegate_attrs_name]) * fn $ wrap_view_delegate_method_name (& $ wrap_view_delegate_self $ (, $ wrap_view_delegate_arg_name : $ wrap_view_delegate_arg_type) *) $ (-> $ wrap_view_delegate_return_type) ? { $ ($ wrap_view_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplButtonDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_button_delegate_attrs_name]) * fn $ wrap_button_delegate_method_name (& $ wrap_button_delegate_self $ (, $ wrap_button_delegate_arg_name : $ wrap_button_delegate_arg_type) *) $ (-> $ wrap_button_delegate_return_type) ? { $ ($ wrap_button_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_button_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplMenuButtonDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_menu_button_delegate_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_menu_button_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl ButtonDelegate { $ ($ (# [$ wrap_button_delegate_attrs_name : meta]) * fn $ wrap_button_delegate_method_name : ident (& $ wrap_button_delegate_self : ident $ (, $ wrap_button_delegate_arg_name : ident : $ wrap_button_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_button_delegate_return_type : ty) ? { $ ($ wrap_button_delegate_body : tt) * }) * } impl MenuButtonDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_menu_button_delegate ! { $ vis struct $ name { } impl MenuButtonDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl ButtonDelegate { $ ($ (# [$ wrap_button_delegate_attrs_name : meta]) * fn $ wrap_button_delegate_method_name : ident (& $ wrap_button_delegate_self : ident $ (, $ wrap_button_delegate_arg_name : ident : $ wrap_button_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_button_delegate_return_type : ty) ? { $ ($ wrap_button_delegate_body : tt) * }) * } impl MenuButtonDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_menu_button_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> MenuButtonDelegate { MenuButtonDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapMenuButtonDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_menu_button_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_view_delegate_attrs_name]) * fn $ wrap_view_delegate_method_name (& $ wrap_view_delegate_self $ (, $ wrap_view_delegate_arg_name : $ wrap_view_delegate_arg_type) *) $ (-> $ wrap_view_delegate_return_type) ? { $ ($ wrap_view_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplButtonDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_button_delegate_attrs_name]) * fn $ wrap_button_delegate_method_name (& $ wrap_button_delegate_self $ (, $ wrap_button_delegate_arg_name : $ wrap_button_delegate_arg_type) *) $ (-> $ wrap_button_delegate_return_type) ? { $ ($ wrap_button_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_button_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplMenuButtonDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_menu_button_delegate_t { self . cef_object . cast () } } } ; }
 mod impl_cef_menu_button_delegate_t {
     use super::*;
     pub fn init_methods<I: ImplMenuButtonDelegate, R: Rc>(
@@ -37332,6 +40593,1210 @@ impl From<MenuButton> for *mut _cef_menu_button_t {
     }
 }
 
+/// See [`_cef_overlay_controller_t`] for more documentation.
+#[derive(Clone)]
+pub struct OverlayController(RefGuard<_cef_overlay_controller_t>);
+pub trait ImplOverlayController: Clone + Sized + Rc {
+    #[doc = "See [`_cef_overlay_controller_t::is_valid`] for more documentation."]
+    fn is_valid(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_overlay_controller_t::is_same`] for more documentation."]
+    fn is_same(&self, that: Option<&mut OverlayController>) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_overlay_controller_t::get_contents_view`] for more documentation."]
+    fn contents_view(&self) -> Option<View>;
+    #[doc = "See [`_cef_overlay_controller_t::get_window`] for more documentation."]
+    fn window(&self) -> Option<Window>;
+    #[doc = "See [`_cef_overlay_controller_t::get_docking_mode`] for more documentation."]
+    fn docking_mode(&self) -> DockingMode;
+    #[doc = "See [`_cef_overlay_controller_t::destroy`] for more documentation."]
+    fn destroy(&self);
+    #[doc = "See [`_cef_overlay_controller_t::set_bounds`] for more documentation."]
+    fn set_bounds(&self, bounds: Option<&Rect>);
+    #[doc = "See [`_cef_overlay_controller_t::get_bounds`] for more documentation."]
+    fn bounds(&self) -> Rect;
+    #[doc = "See [`_cef_overlay_controller_t::get_bounds_in_screen`] for more documentation."]
+    fn bounds_in_screen(&self) -> Rect;
+    #[doc = "See [`_cef_overlay_controller_t::set_size`] for more documentation."]
+    fn set_size(&self, size: Option<&Size>);
+    #[doc = "See [`_cef_overlay_controller_t::get_size`] for more documentation."]
+    fn size(&self) -> Size;
+    #[doc = "See [`_cef_overlay_controller_t::set_position`] for more documentation."]
+    fn set_position(&self, position: Option<&Point>);
+    #[doc = "See [`_cef_overlay_controller_t::get_position`] for more documentation."]
+    fn position(&self) -> Point;
+    #[doc = "See [`_cef_overlay_controller_t::set_insets`] for more documentation."]
+    fn set_insets(&self, insets: Option<&Insets>);
+    #[doc = "See [`_cef_overlay_controller_t::get_insets`] for more documentation."]
+    fn insets(&self) -> Insets;
+    #[doc = "See [`_cef_overlay_controller_t::size_to_preferred_size`] for more documentation."]
+    fn size_to_preferred_size(&self);
+    #[doc = "See [`_cef_overlay_controller_t::set_visible`] for more documentation."]
+    fn set_visible(&self, visible: ::std::os::raw::c_int);
+    #[doc = "See [`_cef_overlay_controller_t::is_visible`] for more documentation."]
+    fn is_visible(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_overlay_controller_t::is_drawn`] for more documentation."]
+    fn is_drawn(&self) -> ::std::os::raw::c_int;
+    fn get_raw(&self) -> *mut _cef_overlay_controller_t;
+}
+impl ImplOverlayController for OverlayController {
+    fn is_valid(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .is_valid
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn is_same(&self, that: Option<&mut OverlayController>) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .is_same
+                .map(|f| {
+                    let arg_that = that;
+                    let arg_self_ = self.into_raw();
+                    let arg_that = arg_that
+                        .map(|arg| {
+                            arg.add_ref();
+                            ImplOverlayController::get_raw(arg)
+                        })
+                        .unwrap_or(std::ptr::null_mut());
+                    let result = f(arg_self_, arg_that);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn contents_view(&self) -> Option<View> {
+        unsafe {
+            self.0
+                .get_contents_view
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn window(&self) -> Option<Window> {
+        unsafe {
+            self.0
+                .get_window
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn docking_mode(&self) -> DockingMode {
+        unsafe {
+            self.0
+                .get_docking_mode
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn destroy(&self) {
+        unsafe {
+            if let Some(f) = self.0.destroy {
+                let arg_self_ = self.into_raw();
+                f(arg_self_);
+            }
+        }
+    }
+    fn set_bounds(&self, bounds: Option<&Rect>) {
+        unsafe {
+            if let Some(f) = self.0.set_bounds {
+                let arg_bounds = bounds;
+                let arg_self_ = self.into_raw();
+                let arg_bounds = arg_bounds.cloned().map(|arg| arg.into());
+                let arg_bounds = arg_bounds
+                    .as_ref()
+                    .map(std::ptr::from_ref)
+                    .unwrap_or(std::ptr::null());
+                f(arg_self_, arg_bounds);
+            }
+        }
+    }
+    fn bounds(&self) -> Rect {
+        unsafe {
+            self.0
+                .get_bounds
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn bounds_in_screen(&self) -> Rect {
+        unsafe {
+            self.0
+                .get_bounds_in_screen
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn set_size(&self, size: Option<&Size>) {
+        unsafe {
+            if let Some(f) = self.0.set_size {
+                let arg_size = size;
+                let arg_self_ = self.into_raw();
+                let arg_size = arg_size.cloned().map(|arg| arg.into());
+                let arg_size = arg_size
+                    .as_ref()
+                    .map(std::ptr::from_ref)
+                    .unwrap_or(std::ptr::null());
+                f(arg_self_, arg_size);
+            }
+        }
+    }
+    fn size(&self) -> Size {
+        unsafe {
+            self.0
+                .get_size
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn set_position(&self, position: Option<&Point>) {
+        unsafe {
+            if let Some(f) = self.0.set_position {
+                let arg_position = position;
+                let arg_self_ = self.into_raw();
+                let arg_position = arg_position.cloned().map(|arg| arg.into());
+                let arg_position = arg_position
+                    .as_ref()
+                    .map(std::ptr::from_ref)
+                    .unwrap_or(std::ptr::null());
+                f(arg_self_, arg_position);
+            }
+        }
+    }
+    fn position(&self) -> Point {
+        unsafe {
+            self.0
+                .get_position
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn set_insets(&self, insets: Option<&Insets>) {
+        unsafe {
+            if let Some(f) = self.0.set_insets {
+                let arg_insets = insets;
+                let arg_self_ = self.into_raw();
+                let arg_insets = arg_insets.cloned().map(|arg| arg.into());
+                let arg_insets = arg_insets
+                    .as_ref()
+                    .map(std::ptr::from_ref)
+                    .unwrap_or(std::ptr::null());
+                f(arg_self_, arg_insets);
+            }
+        }
+    }
+    fn insets(&self) -> Insets {
+        unsafe {
+            self.0
+                .get_insets
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn size_to_preferred_size(&self) {
+        unsafe {
+            if let Some(f) = self.0.size_to_preferred_size {
+                let arg_self_ = self.into_raw();
+                f(arg_self_);
+            }
+        }
+    }
+    fn set_visible(&self, visible: ::std::os::raw::c_int) {
+        unsafe {
+            if let Some(f) = self.0.set_visible {
+                let arg_visible = visible;
+                let arg_self_ = self.into_raw();
+                f(arg_self_, arg_visible);
+            }
+        }
+    }
+    fn is_visible(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .is_visible
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn is_drawn(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .is_drawn
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_overlay_controller_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_overlay_controller_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for OverlayController {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_overlay_controller_t> for &OverlayController {
+    fn into_raw(self) -> *mut _cef_overlay_controller_t {
+        ImplOverlayController::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_overlay_controller_t> for &mut OverlayController {
+    fn into_raw(self) -> *mut _cef_overlay_controller_t {
+        ImplOverlayController::get_raw(self)
+    }
+}
+impl ConvertReturnValue<OverlayController> for *mut _cef_overlay_controller_t {
+    fn wrap_result(self) -> OverlayController {
+        OverlayController(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<OverlayController> for *mut _cef_overlay_controller_t {
+    fn from(value: OverlayController) -> Self {
+        let object = ImplOverlayController::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_panel_delegate_t`] for more documentation.
+#[derive(Clone)]
+pub struct PanelDelegate(RefGuard<_cef_panel_delegate_t>);
+impl PanelDelegate {
+    pub fn new<T>(interface: T) -> Self
+    where
+        T: WrapPanelDelegate,
+    {
+        unsafe {
+            let mut cef_object = std::mem::zeroed();
+            <T as ImplPanelDelegate>::init_methods(&mut cef_object);
+            let object = RcImpl::new(cef_object, interface);
+            <T as WrapPanelDelegate>::wrap_rc(&mut (*object).interface, object);
+            let object: *mut _cef_panel_delegate_t = object.cast();
+            object.wrap_result()
+        }
+    }
+}
+pub trait WrapPanelDelegate: ImplPanelDelegate {
+    fn wrap_rc(&mut self, object: *mut RcImpl<_cef_panel_delegate_t, Self>);
+}
+pub trait ImplPanelDelegate: ImplViewDelegate {
+    fn init_methods(object: &mut _cef_panel_delegate_t) {
+        impl_cef_view_delegate_t::init_methods::<Self, _cef_panel_delegate_t>(&mut object.base);
+        impl_cef_panel_delegate_t::init_methods::<Self, _cef_panel_delegate_t>(object);
+    }
+    fn get_raw(&self) -> *mut _cef_panel_delegate_t {
+        <Self as ImplViewDelegate>::get_raw(self).cast()
+    }
+}
+#[doc = "Implement the [`WrapPanelDelegate`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl PanelDelegate` block you can override default\nmethods implemented by the [`ImplPanelDelegate`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_panel_delegate! {\n    struct MyPanelDelegate {\n        payload: String,\n    }\n\n    impl ViewDelegate {\n        // ...\n    }\n\n    impl PanelDelegate {\n        // ...\n    }\n}\n\nfn make_my_struct() -> PanelDelegate {\n    MyPanelDelegate::new(\"payload\".to_string())\n}\n```"]
+#[macro_export]
+macro_rules ! wrap_panel_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl PanelDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_panel_delegate ! { $ vis struct $ name { } impl PanelDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl PanelDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_panel_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> PanelDelegate { PanelDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapPanelDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_panel_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_view_delegate_attrs_name]) * fn $ wrap_view_delegate_method_name (& $ wrap_view_delegate_self $ (, $ wrap_view_delegate_arg_name : $ wrap_view_delegate_arg_type) *) $ (-> $ wrap_view_delegate_return_type) ? { $ ($ wrap_view_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplPanelDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_panel_delegate_t { self . cef_object . cast () } } } ; }
+mod impl_cef_panel_delegate_t {
+    use super::*;
+    pub fn init_methods<I: ImplPanelDelegate, R: Rc>(object: &mut _cef_panel_delegate_t) {}
+}
+impl ImplViewDelegate for PanelDelegate {
+    fn preferred_size(&self, view: Option<&mut View>) -> Size {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .preferred_size(view)
+    }
+    fn minimum_size(&self, view: Option<&mut View>) -> Size {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .minimum_size(view)
+    }
+    fn maximum_size(&self, view: Option<&mut View>) -> Size {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .maximum_size(view)
+    }
+    fn height_for_width(
+        &self,
+        view: Option<&mut View>,
+        width: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .height_for_width(view, width)
+    }
+    fn on_parent_view_changed(
+        &self,
+        view: Option<&mut View>,
+        added: ::std::os::raw::c_int,
+        parent: Option<&mut View>,
+    ) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_parent_view_changed(view, added, parent)
+    }
+    fn on_child_view_changed(
+        &self,
+        view: Option<&mut View>,
+        added: ::std::os::raw::c_int,
+        child: Option<&mut View>,
+    ) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_child_view_changed(view, added, child)
+    }
+    fn on_window_changed(&self, view: Option<&mut View>, added: ::std::os::raw::c_int) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_window_changed(view, added)
+    }
+    fn on_layout_changed(&self, view: Option<&mut View>, new_bounds: Option<&Rect>) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_layout_changed(view, new_bounds)
+    }
+    fn on_focus(&self, view: Option<&mut View>) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_focus(view)
+    }
+    fn on_blur(&self, view: Option<&mut View>) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_blur(view)
+    }
+    fn on_theme_changed(&self, view: Option<&mut View>) {
+        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
+            .on_theme_changed(view)
+    }
+    fn get_raw(&self) -> *mut _cef_view_delegate_t {
+        unsafe { RefGuard::into_raw(&self.0).cast() }
+    }
+}
+impl ImplPanelDelegate for PanelDelegate {
+    fn get_raw(&self) -> *mut _cef_panel_delegate_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_panel_delegate_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for PanelDelegate {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_panel_delegate_t> for &PanelDelegate {
+    fn into_raw(self) -> *mut _cef_panel_delegate_t {
+        ImplPanelDelegate::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_panel_delegate_t> for &mut PanelDelegate {
+    fn into_raw(self) -> *mut _cef_panel_delegate_t {
+        ImplPanelDelegate::get_raw(self)
+    }
+}
+impl ConvertReturnValue<PanelDelegate> for *mut _cef_panel_delegate_t {
+    fn wrap_result(self) -> PanelDelegate {
+        PanelDelegate(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<PanelDelegate> for *mut _cef_panel_delegate_t {
+    fn from(value: PanelDelegate) -> Self {
+        let object = ImplPanelDelegate::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_panel_t`] for more documentation.
+#[derive(Clone)]
+pub struct Panel(RefGuard<_cef_panel_t>);
+pub trait ImplPanel: ImplView {
+    #[doc = "See [`_cef_panel_t::as_window`] for more documentation."]
+    fn as_window(&self) -> Option<Window>;
+    #[doc = "See [`_cef_panel_t::set_to_fill_layout`] for more documentation."]
+    fn set_to_fill_layout(&self) -> Option<FillLayout>;
+    #[doc = "See [`_cef_panel_t::set_to_box_layout`] for more documentation."]
+    fn set_to_box_layout(&self, settings: Option<&BoxLayoutSettings>) -> Option<BoxLayout>;
+    #[doc = "See [`_cef_panel_t::get_layout`] for more documentation."]
+    fn get_layout(&self) -> Option<Layout>;
+    #[doc = "See [`_cef_panel_t::layout`] for more documentation."]
+    fn layout(&self);
+    #[doc = "See [`_cef_panel_t::add_child_view`] for more documentation."]
+    fn add_child_view(&self, view: Option<&mut View>);
+    #[doc = "See [`_cef_panel_t::add_child_view_at`] for more documentation."]
+    fn add_child_view_at(&self, view: Option<&mut View>, index: ::std::os::raw::c_int);
+    #[doc = "See [`_cef_panel_t::reorder_child_view`] for more documentation."]
+    fn reorder_child_view(&self, view: Option<&mut View>, index: ::std::os::raw::c_int);
+    #[doc = "See [`_cef_panel_t::remove_child_view`] for more documentation."]
+    fn remove_child_view(&self, view: Option<&mut View>);
+    #[doc = "See [`_cef_panel_t::remove_all_child_views`] for more documentation."]
+    fn remove_all_child_views(&self);
+    #[doc = "See [`_cef_panel_t::get_child_view_count`] for more documentation."]
+    fn child_view_count(&self) -> usize;
+    #[doc = "See [`_cef_panel_t::get_child_view_at`] for more documentation."]
+    fn child_view_at(&self, index: ::std::os::raw::c_int) -> Option<View>;
+    fn get_raw(&self) -> *mut _cef_panel_t {
+        <Self as ImplView>::get_raw(self).cast()
+    }
+}
+impl ImplView for Panel {
+    fn as_browser_view(&self) -> Option<BrowserView> {
+        View::from(self).as_browser_view()
+    }
+    fn as_button(&self) -> Option<Button> {
+        View::from(self).as_button()
+    }
+    fn as_panel(&self) -> Option<Panel> {
+        View::from(self).as_panel()
+    }
+    fn as_scroll_view(&self) -> Option<ScrollView> {
+        View::from(self).as_scroll_view()
+    }
+    fn as_textfield(&self) -> Option<Textfield> {
+        View::from(self).as_textfield()
+    }
+    fn type_string(&self) -> CefStringUserfree {
+        View::from(self).type_string()
+    }
+    fn to_string(&self, include_children: ::std::os::raw::c_int) -> CefStringUserfree {
+        View::from(self).to_string(include_children)
+    }
+    fn is_valid(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_valid()
+    }
+    fn is_attached(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_attached()
+    }
+    fn is_same(&self, that: Option<&mut View>) -> ::std::os::raw::c_int {
+        View::from(self).is_same(that)
+    }
+    fn delegate(&self) -> Option<ViewDelegate> {
+        View::from(self).delegate()
+    }
+    fn window(&self) -> Option<Window> {
+        View::from(self).window()
+    }
+    fn id(&self) -> ::std::os::raw::c_int {
+        View::from(self).id()
+    }
+    fn set_id(&self, id: ::std::os::raw::c_int) {
+        View::from(self).set_id(id)
+    }
+    fn group_id(&self) -> ::std::os::raw::c_int {
+        View::from(self).group_id()
+    }
+    fn set_group_id(&self, group_id: ::std::os::raw::c_int) {
+        View::from(self).set_group_id(group_id)
+    }
+    fn parent_view(&self) -> Option<View> {
+        View::from(self).parent_view()
+    }
+    fn view_for_id(&self, id: ::std::os::raw::c_int) -> Option<View> {
+        View::from(self).view_for_id(id)
+    }
+    fn set_bounds(&self, bounds: Option<&Rect>) {
+        View::from(self).set_bounds(bounds)
+    }
+    fn bounds(&self) -> Rect {
+        View::from(self).bounds()
+    }
+    fn bounds_in_screen(&self) -> Rect {
+        View::from(self).bounds_in_screen()
+    }
+    fn set_size(&self, size: Option<&Size>) {
+        View::from(self).set_size(size)
+    }
+    fn size(&self) -> Size {
+        View::from(self).size()
+    }
+    fn set_position(&self, position: Option<&Point>) {
+        View::from(self).set_position(position)
+    }
+    fn position(&self) -> Point {
+        View::from(self).position()
+    }
+    fn set_insets(&self, insets: Option<&Insets>) {
+        View::from(self).set_insets(insets)
+    }
+    fn insets(&self) -> Insets {
+        View::from(self).insets()
+    }
+    fn preferred_size(&self) -> Size {
+        View::from(self).preferred_size()
+    }
+    fn size_to_preferred_size(&self) {
+        View::from(self).size_to_preferred_size()
+    }
+    fn minimum_size(&self) -> Size {
+        View::from(self).minimum_size()
+    }
+    fn maximum_size(&self) -> Size {
+        View::from(self).maximum_size()
+    }
+    fn height_for_width(&self, width: ::std::os::raw::c_int) -> ::std::os::raw::c_int {
+        View::from(self).height_for_width(width)
+    }
+    fn invalidate_layout(&self) {
+        View::from(self).invalidate_layout()
+    }
+    fn set_visible(&self, visible: ::std::os::raw::c_int) {
+        View::from(self).set_visible(visible)
+    }
+    fn is_visible(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_visible()
+    }
+    fn is_drawn(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_drawn()
+    }
+    fn set_enabled(&self, enabled: ::std::os::raw::c_int) {
+        View::from(self).set_enabled(enabled)
+    }
+    fn is_enabled(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_enabled()
+    }
+    fn set_focusable(&self, focusable: ::std::os::raw::c_int) {
+        View::from(self).set_focusable(focusable)
+    }
+    fn is_focusable(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_focusable()
+    }
+    fn is_accessibility_focusable(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_accessibility_focusable()
+    }
+    fn has_focus(&self) -> ::std::os::raw::c_int {
+        View::from(self).has_focus()
+    }
+    fn request_focus(&self) {
+        View::from(self).request_focus()
+    }
+    fn set_background_color(&self, color: u32) {
+        View::from(self).set_background_color(color)
+    }
+    fn background_color(&self) -> cef_color_t {
+        View::from(self).background_color()
+    }
+    fn theme_color(&self, color_id: ::std::os::raw::c_int) -> cef_color_t {
+        View::from(self).theme_color(color_id)
+    }
+    fn convert_point_to_screen(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_to_screen(point)
+    }
+    fn convert_point_from_screen(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_from_screen(point)
+    }
+    fn convert_point_to_window(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_to_window(point)
+    }
+    fn convert_point_from_window(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_from_window(point)
+    }
+    fn convert_point_to_view(
+        &self,
+        view: Option<&mut View>,
+        point: Option<&mut Point>,
+    ) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_to_view(view, point)
+    }
+    fn convert_point_from_view(
+        &self,
+        view: Option<&mut View>,
+        point: Option<&mut Point>,
+    ) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_from_view(view, point)
+    }
+    fn get_raw(&self) -> *mut _cef_view_t {
+        unsafe { RefGuard::into_raw(&self.0).cast() }
+    }
+}
+impl std::convert::From<&Panel> for View {
+    fn from(from: &Panel) -> Self {
+        View(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&from.0).cast()) })
+    }
+}
+impl ImplPanel for Panel {
+    fn as_window(&self) -> Option<Window> {
+        unsafe {
+            self.0
+                .as_window
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn set_to_fill_layout(&self) -> Option<FillLayout> {
+        unsafe {
+            self.0
+                .set_to_fill_layout
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn set_to_box_layout(&self, settings: Option<&BoxLayoutSettings>) -> Option<BoxLayout> {
+        unsafe {
+            self.0
+                .set_to_box_layout
+                .map(|f| {
+                    let arg_settings = settings;
+                    let arg_self_ = self.into_raw();
+                    let arg_settings = arg_settings.cloned().map(|arg| arg.into());
+                    let arg_settings = arg_settings
+                        .as_ref()
+                        .map(std::ptr::from_ref)
+                        .unwrap_or(std::ptr::null());
+                    let result = f(arg_self_, arg_settings);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_layout(&self) -> Option<Layout> {
+        unsafe {
+            self.0
+                .get_layout
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn layout(&self) {
+        unsafe {
+            if let Some(f) = self.0.layout {
+                let arg_self_ = self.into_raw();
+                f(arg_self_);
+            }
+        }
+    }
+    fn add_child_view(&self, view: Option<&mut View>) {
+        unsafe {
+            if let Some(f) = self.0.add_child_view {
+                let arg_view = view;
+                let arg_self_ = self.into_raw();
+                let arg_view = arg_view
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplView::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_view);
+            }
+        }
+    }
+    fn add_child_view_at(&self, view: Option<&mut View>, index: ::std::os::raw::c_int) {
+        unsafe {
+            if let Some(f) = self.0.add_child_view_at {
+                let (arg_view, arg_index) = (view, index);
+                let arg_self_ = self.into_raw();
+                let arg_view = arg_view
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplView::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_view, arg_index);
+            }
+        }
+    }
+    fn reorder_child_view(&self, view: Option<&mut View>, index: ::std::os::raw::c_int) {
+        unsafe {
+            if let Some(f) = self.0.reorder_child_view {
+                let (arg_view, arg_index) = (view, index);
+                let arg_self_ = self.into_raw();
+                let arg_view = arg_view
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplView::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_view, arg_index);
+            }
+        }
+    }
+    fn remove_child_view(&self, view: Option<&mut View>) {
+        unsafe {
+            if let Some(f) = self.0.remove_child_view {
+                let arg_view = view;
+                let arg_self_ = self.into_raw();
+                let arg_view = arg_view
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplView::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_view);
+            }
+        }
+    }
+    fn remove_all_child_views(&self) {
+        unsafe {
+            if let Some(f) = self.0.remove_all_child_views {
+                let arg_self_ = self.into_raw();
+                f(arg_self_);
+            }
+        }
+    }
+    fn child_view_count(&self) -> usize {
+        unsafe {
+            self.0
+                .get_child_view_count
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn child_view_at(&self, index: ::std::os::raw::c_int) -> Option<View> {
+        unsafe {
+            self.0
+                .get_child_view_at
+                .map(|f| {
+                    let arg_index = index;
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_, arg_index);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_panel_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_panel_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for Panel {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_panel_t> for &Panel {
+    fn into_raw(self) -> *mut _cef_panel_t {
+        ImplPanel::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_panel_t> for &mut Panel {
+    fn into_raw(self) -> *mut _cef_panel_t {
+        ImplPanel::get_raw(self)
+    }
+}
+impl ConvertReturnValue<Panel> for *mut _cef_panel_t {
+    fn wrap_result(self) -> Panel {
+        Panel(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<Panel> for *mut _cef_panel_t {
+    fn from(value: Panel) -> Self {
+        let object = ImplPanel::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
+/// See [`_cef_scroll_view_t`] for more documentation.
+#[derive(Clone)]
+pub struct ScrollView(RefGuard<_cef_scroll_view_t>);
+pub trait ImplScrollView: ImplView {
+    #[doc = "See [`_cef_scroll_view_t::set_content_view`] for more documentation."]
+    fn set_content_view(&self, view: Option<&mut View>);
+    #[doc = "See [`_cef_scroll_view_t::get_content_view`] for more documentation."]
+    fn content_view(&self) -> Option<View>;
+    #[doc = "See [`_cef_scroll_view_t::get_visible_content_rect`] for more documentation."]
+    fn visible_content_rect(&self) -> Rect;
+    #[doc = "See [`_cef_scroll_view_t::has_horizontal_scrollbar`] for more documentation."]
+    fn has_horizontal_scrollbar(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_scroll_view_t::get_horizontal_scrollbar_height`] for more documentation."]
+    fn horizontal_scrollbar_height(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_scroll_view_t::has_vertical_scrollbar`] for more documentation."]
+    fn has_vertical_scrollbar(&self) -> ::std::os::raw::c_int;
+    #[doc = "See [`_cef_scroll_view_t::get_vertical_scrollbar_width`] for more documentation."]
+    fn vertical_scrollbar_width(&self) -> ::std::os::raw::c_int;
+    fn get_raw(&self) -> *mut _cef_scroll_view_t {
+        <Self as ImplView>::get_raw(self).cast()
+    }
+}
+impl ImplView for ScrollView {
+    fn as_browser_view(&self) -> Option<BrowserView> {
+        View::from(self).as_browser_view()
+    }
+    fn as_button(&self) -> Option<Button> {
+        View::from(self).as_button()
+    }
+    fn as_panel(&self) -> Option<Panel> {
+        View::from(self).as_panel()
+    }
+    fn as_scroll_view(&self) -> Option<ScrollView> {
+        View::from(self).as_scroll_view()
+    }
+    fn as_textfield(&self) -> Option<Textfield> {
+        View::from(self).as_textfield()
+    }
+    fn type_string(&self) -> CefStringUserfree {
+        View::from(self).type_string()
+    }
+    fn to_string(&self, include_children: ::std::os::raw::c_int) -> CefStringUserfree {
+        View::from(self).to_string(include_children)
+    }
+    fn is_valid(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_valid()
+    }
+    fn is_attached(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_attached()
+    }
+    fn is_same(&self, that: Option<&mut View>) -> ::std::os::raw::c_int {
+        View::from(self).is_same(that)
+    }
+    fn delegate(&self) -> Option<ViewDelegate> {
+        View::from(self).delegate()
+    }
+    fn window(&self) -> Option<Window> {
+        View::from(self).window()
+    }
+    fn id(&self) -> ::std::os::raw::c_int {
+        View::from(self).id()
+    }
+    fn set_id(&self, id: ::std::os::raw::c_int) {
+        View::from(self).set_id(id)
+    }
+    fn group_id(&self) -> ::std::os::raw::c_int {
+        View::from(self).group_id()
+    }
+    fn set_group_id(&self, group_id: ::std::os::raw::c_int) {
+        View::from(self).set_group_id(group_id)
+    }
+    fn parent_view(&self) -> Option<View> {
+        View::from(self).parent_view()
+    }
+    fn view_for_id(&self, id: ::std::os::raw::c_int) -> Option<View> {
+        View::from(self).view_for_id(id)
+    }
+    fn set_bounds(&self, bounds: Option<&Rect>) {
+        View::from(self).set_bounds(bounds)
+    }
+    fn bounds(&self) -> Rect {
+        View::from(self).bounds()
+    }
+    fn bounds_in_screen(&self) -> Rect {
+        View::from(self).bounds_in_screen()
+    }
+    fn set_size(&self, size: Option<&Size>) {
+        View::from(self).set_size(size)
+    }
+    fn size(&self) -> Size {
+        View::from(self).size()
+    }
+    fn set_position(&self, position: Option<&Point>) {
+        View::from(self).set_position(position)
+    }
+    fn position(&self) -> Point {
+        View::from(self).position()
+    }
+    fn set_insets(&self, insets: Option<&Insets>) {
+        View::from(self).set_insets(insets)
+    }
+    fn insets(&self) -> Insets {
+        View::from(self).insets()
+    }
+    fn preferred_size(&self) -> Size {
+        View::from(self).preferred_size()
+    }
+    fn size_to_preferred_size(&self) {
+        View::from(self).size_to_preferred_size()
+    }
+    fn minimum_size(&self) -> Size {
+        View::from(self).minimum_size()
+    }
+    fn maximum_size(&self) -> Size {
+        View::from(self).maximum_size()
+    }
+    fn height_for_width(&self, width: ::std::os::raw::c_int) -> ::std::os::raw::c_int {
+        View::from(self).height_for_width(width)
+    }
+    fn invalidate_layout(&self) {
+        View::from(self).invalidate_layout()
+    }
+    fn set_visible(&self, visible: ::std::os::raw::c_int) {
+        View::from(self).set_visible(visible)
+    }
+    fn is_visible(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_visible()
+    }
+    fn is_drawn(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_drawn()
+    }
+    fn set_enabled(&self, enabled: ::std::os::raw::c_int) {
+        View::from(self).set_enabled(enabled)
+    }
+    fn is_enabled(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_enabled()
+    }
+    fn set_focusable(&self, focusable: ::std::os::raw::c_int) {
+        View::from(self).set_focusable(focusable)
+    }
+    fn is_focusable(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_focusable()
+    }
+    fn is_accessibility_focusable(&self) -> ::std::os::raw::c_int {
+        View::from(self).is_accessibility_focusable()
+    }
+    fn has_focus(&self) -> ::std::os::raw::c_int {
+        View::from(self).has_focus()
+    }
+    fn request_focus(&self) {
+        View::from(self).request_focus()
+    }
+    fn set_background_color(&self, color: u32) {
+        View::from(self).set_background_color(color)
+    }
+    fn background_color(&self) -> cef_color_t {
+        View::from(self).background_color()
+    }
+    fn theme_color(&self, color_id: ::std::os::raw::c_int) -> cef_color_t {
+        View::from(self).theme_color(color_id)
+    }
+    fn convert_point_to_screen(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_to_screen(point)
+    }
+    fn convert_point_from_screen(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_from_screen(point)
+    }
+    fn convert_point_to_window(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_to_window(point)
+    }
+    fn convert_point_from_window(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_from_window(point)
+    }
+    fn convert_point_to_view(
+        &self,
+        view: Option<&mut View>,
+        point: Option<&mut Point>,
+    ) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_to_view(view, point)
+    }
+    fn convert_point_from_view(
+        &self,
+        view: Option<&mut View>,
+        point: Option<&mut Point>,
+    ) -> ::std::os::raw::c_int {
+        View::from(self).convert_point_from_view(view, point)
+    }
+    fn get_raw(&self) -> *mut _cef_view_t {
+        unsafe { RefGuard::into_raw(&self.0).cast() }
+    }
+}
+impl std::convert::From<&ScrollView> for View {
+    fn from(from: &ScrollView) -> Self {
+        View(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&from.0).cast()) })
+    }
+}
+impl ImplScrollView for ScrollView {
+    fn set_content_view(&self, view: Option<&mut View>) {
+        unsafe {
+            if let Some(f) = self.0.set_content_view {
+                let arg_view = view;
+                let arg_self_ = self.into_raw();
+                let arg_view = arg_view
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplView::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_view);
+            }
+        }
+    }
+    fn content_view(&self) -> Option<View> {
+        unsafe {
+            self.0
+                .get_content_view
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    if result.is_null() {
+                        None
+                    } else {
+                        Some(result.wrap_result())
+                    }
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn visible_content_rect(&self) -> Rect {
+        unsafe {
+            self.0
+                .get_visible_content_rect
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn has_horizontal_scrollbar(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .has_horizontal_scrollbar
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn horizontal_scrollbar_height(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .get_horizontal_scrollbar_height
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn has_vertical_scrollbar(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .has_vertical_scrollbar
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn vertical_scrollbar_width(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .get_vertical_scrollbar_width
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn get_raw(&self) -> *mut _cef_scroll_view_t {
+        unsafe { RefGuard::into_raw(&self.0) }
+    }
+}
+impl Rc for _cef_scroll_view_t {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.base.as_base()
+    }
+}
+impl Rc for ScrollView {
+    fn as_base(&self) -> &_cef_base_ref_counted_t {
+        self.0.as_base()
+    }
+}
+impl ConvertParam<*mut _cef_scroll_view_t> for &ScrollView {
+    fn into_raw(self) -> *mut _cef_scroll_view_t {
+        ImplScrollView::get_raw(self)
+    }
+}
+impl ConvertParam<*mut _cef_scroll_view_t> for &mut ScrollView {
+    fn into_raw(self) -> *mut _cef_scroll_view_t {
+        ImplScrollView::get_raw(self)
+    }
+}
+impl ConvertReturnValue<ScrollView> for *mut _cef_scroll_view_t {
+    fn wrap_result(self) -> ScrollView {
+        ScrollView(unsafe { RefGuard::from_raw(self) })
+    }
+}
+impl From<ScrollView> for *mut _cef_scroll_view_t {
+    fn from(value: ScrollView) -> Self {
+        let object = ImplScrollView::get_raw(&value);
+        std::mem::forget(value);
+        object
+    }
+}
+
 /// See [`_cef_textfield_delegate_t`] for more documentation.
 #[derive(Clone)]
 pub struct TextfieldDelegate(RefGuard<_cef_textfield_delegate_t>);
@@ -37374,7 +41839,7 @@ pub trait ImplTextfieldDelegate: ImplViewDelegate {
 }
 #[doc = "Implement the [`WrapTextfieldDelegate`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl TextfieldDelegate` block you can override default\nmethods implemented by the [`ImplTextfieldDelegate`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_textfield_delegate! {\n    struct MyTextfieldDelegate {\n        payload: String,\n    }\n\n    impl ViewDelegate {\n        // ...\n    }\n\n    impl TextfieldDelegate {\n        // ...\n    }\n}\n\nfn make_my_struct() -> TextfieldDelegate {\n    MyTextfieldDelegate::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_textfield_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl TextfieldDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_textfield_delegate ! { $ vis struct $ name { } impl TextfieldDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl TextfieldDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_textfield_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> TextfieldDelegate { TextfieldDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapTextfieldDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_textfield_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_view_delegate_attrs_name]) * fn $ wrap_view_delegate_method_name (& $ wrap_view_delegate_self $ (, $ wrap_view_delegate_arg_name : $ wrap_view_delegate_arg_type) *) $ (-> $ wrap_view_delegate_return_type) ? { $ ($ wrap_view_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplTextfieldDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_textfield_delegate_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_textfield_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl TextfieldDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_textfield_delegate ! { $ vis struct $ name { } impl TextfieldDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl TextfieldDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_textfield_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> TextfieldDelegate { TextfieldDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapTextfieldDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_textfield_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_view_delegate_attrs_name]) * fn $ wrap_view_delegate_method_name (& $ wrap_view_delegate_self $ (, $ wrap_view_delegate_arg_name : $ wrap_view_delegate_arg_type) *) $ (-> $ wrap_view_delegate_return_type) ? { $ ($ wrap_view_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplTextfieldDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_textfield_delegate_t { self . cef_object . cast () } } } ; }
 mod impl_cef_textfield_delegate_t {
     use super::*;
     pub fn init_methods<I: ImplTextfieldDelegate, R: Rc>(object: &mut _cef_textfield_delegate_t) {
@@ -38192,2250 +42657,6 @@ impl From<Textfield> for *mut _cef_textfield_t {
     }
 }
 
-/// See [`_cef_browser_view_delegate_t`] for more documentation.
-#[derive(Clone)]
-pub struct BrowserViewDelegate(RefGuard<_cef_browser_view_delegate_t>);
-impl BrowserViewDelegate {
-    pub fn new<T>(interface: T) -> Self
-    where
-        T: WrapBrowserViewDelegate,
-    {
-        unsafe {
-            let mut cef_object = std::mem::zeroed();
-            <T as ImplBrowserViewDelegate>::init_methods(&mut cef_object);
-            let object = RcImpl::new(cef_object, interface);
-            <T as WrapBrowserViewDelegate>::wrap_rc(&mut (*object).interface, object);
-            let object: *mut _cef_browser_view_delegate_t = object.cast();
-            object.wrap_result()
-        }
-    }
-}
-pub trait WrapBrowserViewDelegate: ImplBrowserViewDelegate {
-    fn wrap_rc(&mut self, object: *mut RcImpl<_cef_browser_view_delegate_t, Self>);
-}
-pub trait ImplBrowserViewDelegate: ImplViewDelegate {
-    #[doc = "See [`_cef_browser_view_delegate_t::on_browser_created`] for more documentation."]
-    fn on_browser_created(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-        browser: Option<&mut Browser>,
-    ) {
-    }
-    #[doc = "See [`_cef_browser_view_delegate_t::on_browser_destroyed`] for more documentation."]
-    fn on_browser_destroyed(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-        browser: Option<&mut Browser>,
-    ) {
-    }
-    #[doc = "See [`_cef_browser_view_delegate_t::get_delegate_for_popup_browser_view`] for more documentation."]
-    fn delegate_for_popup_browser_view(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-        settings: Option<&BrowserSettings>,
-        client: Option<&mut Client>,
-        is_devtools: ::std::os::raw::c_int,
-    ) -> Option<BrowserViewDelegate> {
-        Default::default()
-    }
-    #[doc = "See [`_cef_browser_view_delegate_t::on_popup_browser_view_created`] for more documentation."]
-    fn on_popup_browser_view_created(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-        popup_browser_view: Option<&mut BrowserView>,
-        is_devtools: ::std::os::raw::c_int,
-    ) -> ::std::os::raw::c_int {
-        Default::default()
-    }
-    #[doc = "See [`_cef_browser_view_delegate_t::get_chrome_toolbar_type`] for more documentation."]
-    fn chrome_toolbar_type(&self, browser_view: Option<&mut BrowserView>) -> ChromeToolbarType {
-        Default::default()
-    }
-    #[doc = "See [`_cef_browser_view_delegate_t::use_frameless_window_for_picture_in_picture`] for more documentation."]
-    fn use_frameless_window_for_picture_in_picture(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-    ) -> ::std::os::raw::c_int {
-        Default::default()
-    }
-    #[doc = "See [`_cef_browser_view_delegate_t::on_gesture_command`] for more documentation."]
-    fn on_gesture_command(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-        gesture_command: GestureCommand,
-    ) -> ::std::os::raw::c_int {
-        Default::default()
-    }
-    #[doc = "See [`_cef_browser_view_delegate_t::get_browser_runtime_style`] for more documentation."]
-    fn browser_runtime_style(&self) -> RuntimeStyle {
-        Default::default()
-    }
-    #[doc = "See [`_cef_browser_view_delegate_t::allow_move_for_picture_in_picture`] for more documentation."]
-    fn allow_move_for_picture_in_picture(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-    ) -> ::std::os::raw::c_int {
-        Default::default()
-    }
-    fn init_methods(object: &mut _cef_browser_view_delegate_t) {
-        impl_cef_view_delegate_t::init_methods::<Self, _cef_browser_view_delegate_t>(
-            &mut object.base,
-        );
-        impl_cef_browser_view_delegate_t::init_methods::<Self, _cef_browser_view_delegate_t>(
-            object,
-        );
-    }
-    fn get_raw(&self) -> *mut _cef_browser_view_delegate_t {
-        <Self as ImplViewDelegate>::get_raw(self).cast()
-    }
-}
-#[doc = "Implement the [`WrapBrowserViewDelegate`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl BrowserViewDelegate` block you can override default\nmethods implemented by the [`ImplBrowserViewDelegate`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_browser_view_delegate! {\n    struct MyBrowserViewDelegate {\n        payload: String,\n    }\n\n    impl ViewDelegate {\n        // ...\n    }\n\n    impl BrowserViewDelegate {\n        // ...\n    }\n}\n\nfn make_my_struct() -> BrowserViewDelegate {\n    MyBrowserViewDelegate::new(\"payload\".to_string())\n}\n```"]
-#[macro_export]
-macro_rules ! wrap_browser_view_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl BrowserViewDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_browser_view_delegate ! { $ vis struct $ name { } impl BrowserViewDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl BrowserViewDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_browser_view_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> BrowserViewDelegate { BrowserViewDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapBrowserViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_browser_view_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_view_delegate_attrs_name]) * fn $ wrap_view_delegate_method_name (& $ wrap_view_delegate_self $ (, $ wrap_view_delegate_arg_name : $ wrap_view_delegate_arg_type) *) $ (-> $ wrap_view_delegate_return_type) ? { $ ($ wrap_view_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplBrowserViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_browser_view_delegate_t { self . cef_object . cast () } } } ; }
-mod impl_cef_browser_view_delegate_t {
-    use super::*;
-    pub fn init_methods<I: ImplBrowserViewDelegate, R: Rc>(
-        object: &mut _cef_browser_view_delegate_t,
-    ) {
-        object.on_browser_created = Some(on_browser_created::<I, R>);
-        object.on_browser_destroyed = Some(on_browser_destroyed::<I, R>);
-        object.get_delegate_for_popup_browser_view =
-            Some(get_delegate_for_popup_browser_view::<I, R>);
-        object.on_popup_browser_view_created = Some(on_popup_browser_view_created::<I, R>);
-        object.get_chrome_toolbar_type = Some(get_chrome_toolbar_type::<I, R>);
-        object.use_frameless_window_for_picture_in_picture =
-            Some(use_frameless_window_for_picture_in_picture::<I, R>);
-        object.on_gesture_command = Some(on_gesture_command::<I, R>);
-        object.get_browser_runtime_style = Some(get_browser_runtime_style::<I, R>);
-        object.allow_move_for_picture_in_picture = Some(allow_move_for_picture_in_picture::<I, R>);
-    }
-    extern "C" fn on_browser_created<I: ImplBrowserViewDelegate, R: Rc>(
-        self_: *mut _cef_browser_view_delegate_t,
-        browser_view: *mut _cef_browser_view_t,
-        browser: *mut _cef_browser_t,
-    ) {
-        let (arg_self_, arg_browser_view, arg_browser) = (self_, browser_view, browser);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
-            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser_view = arg_browser_view.as_mut();
-        let mut arg_browser =
-            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser = arg_browser.as_mut();
-        ImplBrowserViewDelegate::on_browser_created(
-            &arg_self_.interface,
-            arg_browser_view,
-            arg_browser,
-        )
-    }
-    extern "C" fn on_browser_destroyed<I: ImplBrowserViewDelegate, R: Rc>(
-        self_: *mut _cef_browser_view_delegate_t,
-        browser_view: *mut _cef_browser_view_t,
-        browser: *mut _cef_browser_t,
-    ) {
-        let (arg_self_, arg_browser_view, arg_browser) = (self_, browser_view, browser);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
-            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser_view = arg_browser_view.as_mut();
-        let mut arg_browser =
-            unsafe { arg_browser.as_mut() }.map(|arg| Browser(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser = arg_browser.as_mut();
-        ImplBrowserViewDelegate::on_browser_destroyed(
-            &arg_self_.interface,
-            arg_browser_view,
-            arg_browser,
-        )
-    }
-    extern "C" fn get_delegate_for_popup_browser_view<I: ImplBrowserViewDelegate, R: Rc>(
-        self_: *mut _cef_browser_view_delegate_t,
-        browser_view: *mut _cef_browser_view_t,
-        settings: *const _cef_browser_settings_t,
-        client: *mut _cef_client_t,
-        is_devtools: ::std::os::raw::c_int,
-    ) -> *mut _cef_browser_view_delegate_t {
-        let (arg_self_, arg_browser_view, arg_settings, arg_client, arg_is_devtools) =
-            (self_, browser_view, settings, client, is_devtools);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
-            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser_view = arg_browser_view.as_mut();
-        let arg_settings = if arg_settings.is_null() {
-            None
-        } else {
-            Some(WrapParamRef::<BrowserSettings, _>::from(arg_settings))
-        };
-        let arg_settings = arg_settings.as_ref().map(|arg| arg.as_ref());
-        let mut arg_client =
-            unsafe { arg_client.as_mut() }.map(|arg| Client(unsafe { RefGuard::from_raw(arg) }));
-        let arg_client = arg_client.as_mut();
-        let arg_is_devtools = arg_is_devtools.into_raw();
-        let result = ImplBrowserViewDelegate::delegate_for_popup_browser_view(
-            &arg_self_.interface,
-            arg_browser_view,
-            arg_settings,
-            arg_client,
-            arg_is_devtools,
-        );
-        result
-            .map(|result| result.into())
-            .unwrap_or(std::ptr::null_mut())
-    }
-    extern "C" fn on_popup_browser_view_created<I: ImplBrowserViewDelegate, R: Rc>(
-        self_: *mut _cef_browser_view_delegate_t,
-        browser_view: *mut _cef_browser_view_t,
-        popup_browser_view: *mut _cef_browser_view_t,
-        is_devtools: ::std::os::raw::c_int,
-    ) -> ::std::os::raw::c_int {
-        let (arg_self_, arg_browser_view, arg_popup_browser_view, arg_is_devtools) =
-            (self_, browser_view, popup_browser_view, is_devtools);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
-            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser_view = arg_browser_view.as_mut();
-        let mut arg_popup_browser_view = unsafe { arg_popup_browser_view.as_mut() }
-            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
-        let arg_popup_browser_view = arg_popup_browser_view.as_mut();
-        let arg_is_devtools = arg_is_devtools.into_raw();
-        ImplBrowserViewDelegate::on_popup_browser_view_created(
-            &arg_self_.interface,
-            arg_browser_view,
-            arg_popup_browser_view,
-            arg_is_devtools,
-        )
-    }
-    extern "C" fn get_chrome_toolbar_type<I: ImplBrowserViewDelegate, R: Rc>(
-        self_: *mut _cef_browser_view_delegate_t,
-        browser_view: *mut _cef_browser_view_t,
-    ) -> cef_chrome_toolbar_type_t {
-        let (arg_self_, arg_browser_view) = (self_, browser_view);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
-            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser_view = arg_browser_view.as_mut();
-        let result =
-            ImplBrowserViewDelegate::chrome_toolbar_type(&arg_self_.interface, arg_browser_view);
-        result.into()
-    }
-    extern "C" fn use_frameless_window_for_picture_in_picture<I: ImplBrowserViewDelegate, R: Rc>(
-        self_: *mut _cef_browser_view_delegate_t,
-        browser_view: *mut _cef_browser_view_t,
-    ) -> ::std::os::raw::c_int {
-        let (arg_self_, arg_browser_view) = (self_, browser_view);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
-            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser_view = arg_browser_view.as_mut();
-        ImplBrowserViewDelegate::use_frameless_window_for_picture_in_picture(
-            &arg_self_.interface,
-            arg_browser_view,
-        )
-    }
-    extern "C" fn on_gesture_command<I: ImplBrowserViewDelegate, R: Rc>(
-        self_: *mut _cef_browser_view_delegate_t,
-        browser_view: *mut _cef_browser_view_t,
-        gesture_command: cef_gesture_command_t,
-    ) -> ::std::os::raw::c_int {
-        let (arg_self_, arg_browser_view, arg_gesture_command) =
-            (self_, browser_view, gesture_command);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
-            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser_view = arg_browser_view.as_mut();
-        let arg_gesture_command = arg_gesture_command.into_raw();
-        ImplBrowserViewDelegate::on_gesture_command(
-            &arg_self_.interface,
-            arg_browser_view,
-            arg_gesture_command,
-        )
-    }
-    extern "C" fn get_browser_runtime_style<I: ImplBrowserViewDelegate, R: Rc>(
-        self_: *mut _cef_browser_view_delegate_t,
-    ) -> cef_runtime_style_t {
-        let arg_self_ = self_;
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let result = ImplBrowserViewDelegate::browser_runtime_style(&arg_self_.interface);
-        result.into()
-    }
-    extern "C" fn allow_move_for_picture_in_picture<I: ImplBrowserViewDelegate, R: Rc>(
-        self_: *mut _cef_browser_view_delegate_t,
-        browser_view: *mut _cef_browser_view_t,
-    ) -> ::std::os::raw::c_int {
-        let (arg_self_, arg_browser_view) = (self_, browser_view);
-        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
-        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
-            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
-        let arg_browser_view = arg_browser_view.as_mut();
-        ImplBrowserViewDelegate::allow_move_for_picture_in_picture(
-            &arg_self_.interface,
-            arg_browser_view,
-        )
-    }
-}
-impl ImplViewDelegate for BrowserViewDelegate {
-    fn preferred_size(&self, view: Option<&mut View>) -> Size {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .preferred_size(view)
-    }
-    fn minimum_size(&self, view: Option<&mut View>) -> Size {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .minimum_size(view)
-    }
-    fn maximum_size(&self, view: Option<&mut View>) -> Size {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .maximum_size(view)
-    }
-    fn height_for_width(
-        &self,
-        view: Option<&mut View>,
-        width: ::std::os::raw::c_int,
-    ) -> ::std::os::raw::c_int {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .height_for_width(view, width)
-    }
-    fn on_parent_view_changed(
-        &self,
-        view: Option<&mut View>,
-        added: ::std::os::raw::c_int,
-        parent: Option<&mut View>,
-    ) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_parent_view_changed(view, added, parent)
-    }
-    fn on_child_view_changed(
-        &self,
-        view: Option<&mut View>,
-        added: ::std::os::raw::c_int,
-        child: Option<&mut View>,
-    ) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_child_view_changed(view, added, child)
-    }
-    fn on_window_changed(&self, view: Option<&mut View>, added: ::std::os::raw::c_int) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_window_changed(view, added)
-    }
-    fn on_layout_changed(&self, view: Option<&mut View>, new_bounds: Option<&Rect>) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_layout_changed(view, new_bounds)
-    }
-    fn on_focus(&self, view: Option<&mut View>) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_focus(view)
-    }
-    fn on_blur(&self, view: Option<&mut View>) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_blur(view)
-    }
-    fn on_theme_changed(&self, view: Option<&mut View>) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_theme_changed(view)
-    }
-    fn get_raw(&self) -> *mut _cef_view_delegate_t {
-        unsafe { RefGuard::into_raw(&self.0).cast() }
-    }
-}
-impl ImplBrowserViewDelegate for BrowserViewDelegate {
-    fn on_browser_created(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-        browser: Option<&mut Browser>,
-    ) {
-        unsafe {
-            if let Some(f) = self.0.on_browser_created {
-                let (arg_browser_view, arg_browser) = (browser_view, browser);
-                let arg_self_ = self.into_raw();
-                let arg_browser_view = arg_browser_view
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplBrowserView::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                let arg_browser = arg_browser
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplBrowser::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                f(arg_self_, arg_browser_view, arg_browser);
-            }
-        }
-    }
-    fn on_browser_destroyed(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-        browser: Option<&mut Browser>,
-    ) {
-        unsafe {
-            if let Some(f) = self.0.on_browser_destroyed {
-                let (arg_browser_view, arg_browser) = (browser_view, browser);
-                let arg_self_ = self.into_raw();
-                let arg_browser_view = arg_browser_view
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplBrowserView::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                let arg_browser = arg_browser
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplBrowser::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                f(arg_self_, arg_browser_view, arg_browser);
-            }
-        }
-    }
-    fn delegate_for_popup_browser_view(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-        settings: Option<&BrowserSettings>,
-        client: Option<&mut Client>,
-        is_devtools: ::std::os::raw::c_int,
-    ) -> Option<BrowserViewDelegate> {
-        unsafe {
-            self.0
-                .get_delegate_for_popup_browser_view
-                .map(|f| {
-                    let (arg_browser_view, arg_settings, arg_client, arg_is_devtools) =
-                        (browser_view, settings, client, is_devtools);
-                    let arg_self_ = self.into_raw();
-                    let arg_browser_view = arg_browser_view
-                        .map(|arg| {
-                            arg.add_ref();
-                            ImplBrowserView::get_raw(arg)
-                        })
-                        .unwrap_or(std::ptr::null_mut());
-                    let arg_settings = arg_settings.cloned().map(|arg| arg.into());
-                    let arg_settings = arg_settings
-                        .as_ref()
-                        .map(std::ptr::from_ref)
-                        .unwrap_or(std::ptr::null());
-                    let arg_client = arg_client
-                        .map(|arg| {
-                            arg.add_ref();
-                            ImplClient::get_raw(arg)
-                        })
-                        .unwrap_or(std::ptr::null_mut());
-                    let result = f(
-                        arg_self_,
-                        arg_browser_view,
-                        arg_settings,
-                        arg_client,
-                        arg_is_devtools,
-                    );
-                    if result.is_null() {
-                        None
-                    } else {
-                        Some(result.wrap_result())
-                    }
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn on_popup_browser_view_created(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-        popup_browser_view: Option<&mut BrowserView>,
-        is_devtools: ::std::os::raw::c_int,
-    ) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .on_popup_browser_view_created
-                .map(|f| {
-                    let (arg_browser_view, arg_popup_browser_view, arg_is_devtools) =
-                        (browser_view, popup_browser_view, is_devtools);
-                    let arg_self_ = self.into_raw();
-                    let arg_browser_view = arg_browser_view
-                        .map(|arg| {
-                            arg.add_ref();
-                            ImplBrowserView::get_raw(arg)
-                        })
-                        .unwrap_or(std::ptr::null_mut());
-                    let arg_popup_browser_view = arg_popup_browser_view
-                        .map(|arg| {
-                            arg.add_ref();
-                            ImplBrowserView::get_raw(arg)
-                        })
-                        .unwrap_or(std::ptr::null_mut());
-                    let result = f(
-                        arg_self_,
-                        arg_browser_view,
-                        arg_popup_browser_view,
-                        arg_is_devtools,
-                    );
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn chrome_toolbar_type(&self, browser_view: Option<&mut BrowserView>) -> ChromeToolbarType {
-        unsafe {
-            self.0
-                .get_chrome_toolbar_type
-                .map(|f| {
-                    let arg_browser_view = browser_view;
-                    let arg_self_ = self.into_raw();
-                    let arg_browser_view = arg_browser_view
-                        .map(|arg| {
-                            arg.add_ref();
-                            ImplBrowserView::get_raw(arg)
-                        })
-                        .unwrap_or(std::ptr::null_mut());
-                    let result = f(arg_self_, arg_browser_view);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn use_frameless_window_for_picture_in_picture(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-    ) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .use_frameless_window_for_picture_in_picture
-                .map(|f| {
-                    let arg_browser_view = browser_view;
-                    let arg_self_ = self.into_raw();
-                    let arg_browser_view = arg_browser_view
-                        .map(|arg| {
-                            arg.add_ref();
-                            ImplBrowserView::get_raw(arg)
-                        })
-                        .unwrap_or(std::ptr::null_mut());
-                    let result = f(arg_self_, arg_browser_view);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn on_gesture_command(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-        gesture_command: GestureCommand,
-    ) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .on_gesture_command
-                .map(|f| {
-                    let (arg_browser_view, arg_gesture_command) = (browser_view, gesture_command);
-                    let arg_self_ = self.into_raw();
-                    let arg_browser_view = arg_browser_view
-                        .map(|arg| {
-                            arg.add_ref();
-                            ImplBrowserView::get_raw(arg)
-                        })
-                        .unwrap_or(std::ptr::null_mut());
-                    let arg_gesture_command = arg_gesture_command.into_raw();
-                    let result = f(arg_self_, arg_browser_view, arg_gesture_command);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn browser_runtime_style(&self) -> RuntimeStyle {
-        unsafe {
-            self.0
-                .get_browser_runtime_style
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn allow_move_for_picture_in_picture(
-        &self,
-        browser_view: Option<&mut BrowserView>,
-    ) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .allow_move_for_picture_in_picture
-                .map(|f| {
-                    let arg_browser_view = browser_view;
-                    let arg_self_ = self.into_raw();
-                    let arg_browser_view = arg_browser_view
-                        .map(|arg| {
-                            arg.add_ref();
-                            ImplBrowserView::get_raw(arg)
-                        })
-                        .unwrap_or(std::ptr::null_mut());
-                    let result = f(arg_self_, arg_browser_view);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn get_raw(&self) -> *mut _cef_browser_view_delegate_t {
-        unsafe { RefGuard::into_raw(&self.0) }
-    }
-}
-impl Rc for _cef_browser_view_delegate_t {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.base.as_base()
-    }
-}
-impl Rc for BrowserViewDelegate {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.0.as_base()
-    }
-}
-impl ConvertParam<*mut _cef_browser_view_delegate_t> for &BrowserViewDelegate {
-    fn into_raw(self) -> *mut _cef_browser_view_delegate_t {
-        ImplBrowserViewDelegate::get_raw(self)
-    }
-}
-impl ConvertParam<*mut _cef_browser_view_delegate_t> for &mut BrowserViewDelegate {
-    fn into_raw(self) -> *mut _cef_browser_view_delegate_t {
-        ImplBrowserViewDelegate::get_raw(self)
-    }
-}
-impl ConvertReturnValue<BrowserViewDelegate> for *mut _cef_browser_view_delegate_t {
-    fn wrap_result(self) -> BrowserViewDelegate {
-        BrowserViewDelegate(unsafe { RefGuard::from_raw(self) })
-    }
-}
-impl From<BrowserViewDelegate> for *mut _cef_browser_view_delegate_t {
-    fn from(value: BrowserViewDelegate) -> Self {
-        let object = ImplBrowserViewDelegate::get_raw(&value);
-        std::mem::forget(value);
-        object
-    }
-}
-
-/// See [`_cef_browser_view_t`] for more documentation.
-#[derive(Clone)]
-pub struct BrowserView(RefGuard<_cef_browser_view_t>);
-pub trait ImplBrowserView: ImplView {
-    #[doc = "See [`_cef_browser_view_t::get_browser`] for more documentation."]
-    fn browser(&self) -> Option<Browser>;
-    #[doc = "See [`_cef_browser_view_t::get_chrome_toolbar`] for more documentation."]
-    fn chrome_toolbar(&self) -> Option<View>;
-    #[doc = "See [`_cef_browser_view_t::set_prefer_accelerators`] for more documentation."]
-    fn set_prefer_accelerators(&self, prefer_accelerators: ::std::os::raw::c_int);
-    #[doc = "See [`_cef_browser_view_t::get_runtime_style`] for more documentation."]
-    fn runtime_style(&self) -> RuntimeStyle;
-    fn get_raw(&self) -> *mut _cef_browser_view_t {
-        <Self as ImplView>::get_raw(self).cast()
-    }
-}
-impl ImplView for BrowserView {
-    fn as_browser_view(&self) -> Option<BrowserView> {
-        View::from(self).as_browser_view()
-    }
-    fn as_button(&self) -> Option<Button> {
-        View::from(self).as_button()
-    }
-    fn as_panel(&self) -> Option<Panel> {
-        View::from(self).as_panel()
-    }
-    fn as_scroll_view(&self) -> Option<ScrollView> {
-        View::from(self).as_scroll_view()
-    }
-    fn as_textfield(&self) -> Option<Textfield> {
-        View::from(self).as_textfield()
-    }
-    fn type_string(&self) -> CefStringUserfree {
-        View::from(self).type_string()
-    }
-    fn to_string(&self, include_children: ::std::os::raw::c_int) -> CefStringUserfree {
-        View::from(self).to_string(include_children)
-    }
-    fn is_valid(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_valid()
-    }
-    fn is_attached(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_attached()
-    }
-    fn is_same(&self, that: Option<&mut View>) -> ::std::os::raw::c_int {
-        View::from(self).is_same(that)
-    }
-    fn delegate(&self) -> Option<ViewDelegate> {
-        View::from(self).delegate()
-    }
-    fn window(&self) -> Option<Window> {
-        View::from(self).window()
-    }
-    fn id(&self) -> ::std::os::raw::c_int {
-        View::from(self).id()
-    }
-    fn set_id(&self, id: ::std::os::raw::c_int) {
-        View::from(self).set_id(id)
-    }
-    fn group_id(&self) -> ::std::os::raw::c_int {
-        View::from(self).group_id()
-    }
-    fn set_group_id(&self, group_id: ::std::os::raw::c_int) {
-        View::from(self).set_group_id(group_id)
-    }
-    fn parent_view(&self) -> Option<View> {
-        View::from(self).parent_view()
-    }
-    fn view_for_id(&self, id: ::std::os::raw::c_int) -> Option<View> {
-        View::from(self).view_for_id(id)
-    }
-    fn set_bounds(&self, bounds: Option<&Rect>) {
-        View::from(self).set_bounds(bounds)
-    }
-    fn bounds(&self) -> Rect {
-        View::from(self).bounds()
-    }
-    fn bounds_in_screen(&self) -> Rect {
-        View::from(self).bounds_in_screen()
-    }
-    fn set_size(&self, size: Option<&Size>) {
-        View::from(self).set_size(size)
-    }
-    fn size(&self) -> Size {
-        View::from(self).size()
-    }
-    fn set_position(&self, position: Option<&Point>) {
-        View::from(self).set_position(position)
-    }
-    fn position(&self) -> Point {
-        View::from(self).position()
-    }
-    fn set_insets(&self, insets: Option<&Insets>) {
-        View::from(self).set_insets(insets)
-    }
-    fn insets(&self) -> Insets {
-        View::from(self).insets()
-    }
-    fn preferred_size(&self) -> Size {
-        View::from(self).preferred_size()
-    }
-    fn size_to_preferred_size(&self) {
-        View::from(self).size_to_preferred_size()
-    }
-    fn minimum_size(&self) -> Size {
-        View::from(self).minimum_size()
-    }
-    fn maximum_size(&self) -> Size {
-        View::from(self).maximum_size()
-    }
-    fn height_for_width(&self, width: ::std::os::raw::c_int) -> ::std::os::raw::c_int {
-        View::from(self).height_for_width(width)
-    }
-    fn invalidate_layout(&self) {
-        View::from(self).invalidate_layout()
-    }
-    fn set_visible(&self, visible: ::std::os::raw::c_int) {
-        View::from(self).set_visible(visible)
-    }
-    fn is_visible(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_visible()
-    }
-    fn is_drawn(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_drawn()
-    }
-    fn set_enabled(&self, enabled: ::std::os::raw::c_int) {
-        View::from(self).set_enabled(enabled)
-    }
-    fn is_enabled(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_enabled()
-    }
-    fn set_focusable(&self, focusable: ::std::os::raw::c_int) {
-        View::from(self).set_focusable(focusable)
-    }
-    fn is_focusable(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_focusable()
-    }
-    fn is_accessibility_focusable(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_accessibility_focusable()
-    }
-    fn has_focus(&self) -> ::std::os::raw::c_int {
-        View::from(self).has_focus()
-    }
-    fn request_focus(&self) {
-        View::from(self).request_focus()
-    }
-    fn set_background_color(&self, color: u32) {
-        View::from(self).set_background_color(color)
-    }
-    fn background_color(&self) -> cef_color_t {
-        View::from(self).background_color()
-    }
-    fn theme_color(&self, color_id: ::std::os::raw::c_int) -> cef_color_t {
-        View::from(self).theme_color(color_id)
-    }
-    fn convert_point_to_screen(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_to_screen(point)
-    }
-    fn convert_point_from_screen(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_from_screen(point)
-    }
-    fn convert_point_to_window(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_to_window(point)
-    }
-    fn convert_point_from_window(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_from_window(point)
-    }
-    fn convert_point_to_view(
-        &self,
-        view: Option<&mut View>,
-        point: Option<&mut Point>,
-    ) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_to_view(view, point)
-    }
-    fn convert_point_from_view(
-        &self,
-        view: Option<&mut View>,
-        point: Option<&mut Point>,
-    ) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_from_view(view, point)
-    }
-    fn get_raw(&self) -> *mut _cef_view_t {
-        unsafe { RefGuard::into_raw(&self.0).cast() }
-    }
-}
-impl std::convert::From<&BrowserView> for View {
-    fn from(from: &BrowserView) -> Self {
-        View(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&from.0).cast()) })
-    }
-}
-impl ImplBrowserView for BrowserView {
-    fn browser(&self) -> Option<Browser> {
-        unsafe {
-            self.0
-                .get_browser
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    if result.is_null() {
-                        None
-                    } else {
-                        Some(result.wrap_result())
-                    }
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn chrome_toolbar(&self) -> Option<View> {
-        unsafe {
-            self.0
-                .get_chrome_toolbar
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    if result.is_null() {
-                        None
-                    } else {
-                        Some(result.wrap_result())
-                    }
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn set_prefer_accelerators(&self, prefer_accelerators: ::std::os::raw::c_int) {
-        unsafe {
-            if let Some(f) = self.0.set_prefer_accelerators {
-                let arg_prefer_accelerators = prefer_accelerators;
-                let arg_self_ = self.into_raw();
-                f(arg_self_, arg_prefer_accelerators);
-            }
-        }
-    }
-    fn runtime_style(&self) -> RuntimeStyle {
-        unsafe {
-            self.0
-                .get_runtime_style
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn get_raw(&self) -> *mut _cef_browser_view_t {
-        unsafe { RefGuard::into_raw(&self.0) }
-    }
-}
-impl Rc for _cef_browser_view_t {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.base.as_base()
-    }
-}
-impl Rc for BrowserView {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.0.as_base()
-    }
-}
-impl ConvertParam<*mut _cef_browser_view_t> for &BrowserView {
-    fn into_raw(self) -> *mut _cef_browser_view_t {
-        ImplBrowserView::get_raw(self)
-    }
-}
-impl ConvertParam<*mut _cef_browser_view_t> for &mut BrowserView {
-    fn into_raw(self) -> *mut _cef_browser_view_t {
-        ImplBrowserView::get_raw(self)
-    }
-}
-impl ConvertReturnValue<BrowserView> for *mut _cef_browser_view_t {
-    fn wrap_result(self) -> BrowserView {
-        BrowserView(unsafe { RefGuard::from_raw(self) })
-    }
-}
-impl From<BrowserView> for *mut _cef_browser_view_t {
-    fn from(value: BrowserView) -> Self {
-        let object = ImplBrowserView::get_raw(&value);
-        std::mem::forget(value);
-        object
-    }
-}
-
-/// See [`_cef_scroll_view_t`] for more documentation.
-#[derive(Clone)]
-pub struct ScrollView(RefGuard<_cef_scroll_view_t>);
-pub trait ImplScrollView: ImplView {
-    #[doc = "See [`_cef_scroll_view_t::set_content_view`] for more documentation."]
-    fn set_content_view(&self, view: Option<&mut View>);
-    #[doc = "See [`_cef_scroll_view_t::get_content_view`] for more documentation."]
-    fn content_view(&self) -> Option<View>;
-    #[doc = "See [`_cef_scroll_view_t::get_visible_content_rect`] for more documentation."]
-    fn visible_content_rect(&self) -> Rect;
-    #[doc = "See [`_cef_scroll_view_t::has_horizontal_scrollbar`] for more documentation."]
-    fn has_horizontal_scrollbar(&self) -> ::std::os::raw::c_int;
-    #[doc = "See [`_cef_scroll_view_t::get_horizontal_scrollbar_height`] for more documentation."]
-    fn horizontal_scrollbar_height(&self) -> ::std::os::raw::c_int;
-    #[doc = "See [`_cef_scroll_view_t::has_vertical_scrollbar`] for more documentation."]
-    fn has_vertical_scrollbar(&self) -> ::std::os::raw::c_int;
-    #[doc = "See [`_cef_scroll_view_t::get_vertical_scrollbar_width`] for more documentation."]
-    fn vertical_scrollbar_width(&self) -> ::std::os::raw::c_int;
-    fn get_raw(&self) -> *mut _cef_scroll_view_t {
-        <Self as ImplView>::get_raw(self).cast()
-    }
-}
-impl ImplView for ScrollView {
-    fn as_browser_view(&self) -> Option<BrowserView> {
-        View::from(self).as_browser_view()
-    }
-    fn as_button(&self) -> Option<Button> {
-        View::from(self).as_button()
-    }
-    fn as_panel(&self) -> Option<Panel> {
-        View::from(self).as_panel()
-    }
-    fn as_scroll_view(&self) -> Option<ScrollView> {
-        View::from(self).as_scroll_view()
-    }
-    fn as_textfield(&self) -> Option<Textfield> {
-        View::from(self).as_textfield()
-    }
-    fn type_string(&self) -> CefStringUserfree {
-        View::from(self).type_string()
-    }
-    fn to_string(&self, include_children: ::std::os::raw::c_int) -> CefStringUserfree {
-        View::from(self).to_string(include_children)
-    }
-    fn is_valid(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_valid()
-    }
-    fn is_attached(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_attached()
-    }
-    fn is_same(&self, that: Option<&mut View>) -> ::std::os::raw::c_int {
-        View::from(self).is_same(that)
-    }
-    fn delegate(&self) -> Option<ViewDelegate> {
-        View::from(self).delegate()
-    }
-    fn window(&self) -> Option<Window> {
-        View::from(self).window()
-    }
-    fn id(&self) -> ::std::os::raw::c_int {
-        View::from(self).id()
-    }
-    fn set_id(&self, id: ::std::os::raw::c_int) {
-        View::from(self).set_id(id)
-    }
-    fn group_id(&self) -> ::std::os::raw::c_int {
-        View::from(self).group_id()
-    }
-    fn set_group_id(&self, group_id: ::std::os::raw::c_int) {
-        View::from(self).set_group_id(group_id)
-    }
-    fn parent_view(&self) -> Option<View> {
-        View::from(self).parent_view()
-    }
-    fn view_for_id(&self, id: ::std::os::raw::c_int) -> Option<View> {
-        View::from(self).view_for_id(id)
-    }
-    fn set_bounds(&self, bounds: Option<&Rect>) {
-        View::from(self).set_bounds(bounds)
-    }
-    fn bounds(&self) -> Rect {
-        View::from(self).bounds()
-    }
-    fn bounds_in_screen(&self) -> Rect {
-        View::from(self).bounds_in_screen()
-    }
-    fn set_size(&self, size: Option<&Size>) {
-        View::from(self).set_size(size)
-    }
-    fn size(&self) -> Size {
-        View::from(self).size()
-    }
-    fn set_position(&self, position: Option<&Point>) {
-        View::from(self).set_position(position)
-    }
-    fn position(&self) -> Point {
-        View::from(self).position()
-    }
-    fn set_insets(&self, insets: Option<&Insets>) {
-        View::from(self).set_insets(insets)
-    }
-    fn insets(&self) -> Insets {
-        View::from(self).insets()
-    }
-    fn preferred_size(&self) -> Size {
-        View::from(self).preferred_size()
-    }
-    fn size_to_preferred_size(&self) {
-        View::from(self).size_to_preferred_size()
-    }
-    fn minimum_size(&self) -> Size {
-        View::from(self).minimum_size()
-    }
-    fn maximum_size(&self) -> Size {
-        View::from(self).maximum_size()
-    }
-    fn height_for_width(&self, width: ::std::os::raw::c_int) -> ::std::os::raw::c_int {
-        View::from(self).height_for_width(width)
-    }
-    fn invalidate_layout(&self) {
-        View::from(self).invalidate_layout()
-    }
-    fn set_visible(&self, visible: ::std::os::raw::c_int) {
-        View::from(self).set_visible(visible)
-    }
-    fn is_visible(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_visible()
-    }
-    fn is_drawn(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_drawn()
-    }
-    fn set_enabled(&self, enabled: ::std::os::raw::c_int) {
-        View::from(self).set_enabled(enabled)
-    }
-    fn is_enabled(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_enabled()
-    }
-    fn set_focusable(&self, focusable: ::std::os::raw::c_int) {
-        View::from(self).set_focusable(focusable)
-    }
-    fn is_focusable(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_focusable()
-    }
-    fn is_accessibility_focusable(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_accessibility_focusable()
-    }
-    fn has_focus(&self) -> ::std::os::raw::c_int {
-        View::from(self).has_focus()
-    }
-    fn request_focus(&self) {
-        View::from(self).request_focus()
-    }
-    fn set_background_color(&self, color: u32) {
-        View::from(self).set_background_color(color)
-    }
-    fn background_color(&self) -> cef_color_t {
-        View::from(self).background_color()
-    }
-    fn theme_color(&self, color_id: ::std::os::raw::c_int) -> cef_color_t {
-        View::from(self).theme_color(color_id)
-    }
-    fn convert_point_to_screen(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_to_screen(point)
-    }
-    fn convert_point_from_screen(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_from_screen(point)
-    }
-    fn convert_point_to_window(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_to_window(point)
-    }
-    fn convert_point_from_window(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_from_window(point)
-    }
-    fn convert_point_to_view(
-        &self,
-        view: Option<&mut View>,
-        point: Option<&mut Point>,
-    ) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_to_view(view, point)
-    }
-    fn convert_point_from_view(
-        &self,
-        view: Option<&mut View>,
-        point: Option<&mut Point>,
-    ) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_from_view(view, point)
-    }
-    fn get_raw(&self) -> *mut _cef_view_t {
-        unsafe { RefGuard::into_raw(&self.0).cast() }
-    }
-}
-impl std::convert::From<&ScrollView> for View {
-    fn from(from: &ScrollView) -> Self {
-        View(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&from.0).cast()) })
-    }
-}
-impl ImplScrollView for ScrollView {
-    fn set_content_view(&self, view: Option<&mut View>) {
-        unsafe {
-            if let Some(f) = self.0.set_content_view {
-                let arg_view = view;
-                let arg_self_ = self.into_raw();
-                let arg_view = arg_view
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplView::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                f(arg_self_, arg_view);
-            }
-        }
-    }
-    fn content_view(&self) -> Option<View> {
-        unsafe {
-            self.0
-                .get_content_view
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    if result.is_null() {
-                        None
-                    } else {
-                        Some(result.wrap_result())
-                    }
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn visible_content_rect(&self) -> Rect {
-        unsafe {
-            self.0
-                .get_visible_content_rect
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn has_horizontal_scrollbar(&self) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .has_horizontal_scrollbar
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn horizontal_scrollbar_height(&self) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .get_horizontal_scrollbar_height
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn has_vertical_scrollbar(&self) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .has_vertical_scrollbar
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn vertical_scrollbar_width(&self) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .get_vertical_scrollbar_width
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn get_raw(&self) -> *mut _cef_scroll_view_t {
-        unsafe { RefGuard::into_raw(&self.0) }
-    }
-}
-impl Rc for _cef_scroll_view_t {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.base.as_base()
-    }
-}
-impl Rc for ScrollView {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.0.as_base()
-    }
-}
-impl ConvertParam<*mut _cef_scroll_view_t> for &ScrollView {
-    fn into_raw(self) -> *mut _cef_scroll_view_t {
-        ImplScrollView::get_raw(self)
-    }
-}
-impl ConvertParam<*mut _cef_scroll_view_t> for &mut ScrollView {
-    fn into_raw(self) -> *mut _cef_scroll_view_t {
-        ImplScrollView::get_raw(self)
-    }
-}
-impl ConvertReturnValue<ScrollView> for *mut _cef_scroll_view_t {
-    fn wrap_result(self) -> ScrollView {
-        ScrollView(unsafe { RefGuard::from_raw(self) })
-    }
-}
-impl From<ScrollView> for *mut _cef_scroll_view_t {
-    fn from(value: ScrollView) -> Self {
-        let object = ImplScrollView::get_raw(&value);
-        std::mem::forget(value);
-        object
-    }
-}
-
-/// See [`_cef_display_t`] for more documentation.
-#[derive(Clone)]
-pub struct Display(RefGuard<_cef_display_t>);
-pub trait ImplDisplay: Clone + Sized + Rc {
-    #[doc = "See [`_cef_display_t::get_id`] for more documentation."]
-    fn id(&self) -> i64;
-    #[doc = "See [`_cef_display_t::get_device_scale_factor`] for more documentation."]
-    fn device_scale_factor(&self) -> f32;
-    #[doc = "See [`_cef_display_t::convert_point_to_pixels`] for more documentation."]
-    fn convert_point_to_pixels(&self, point: Option<&mut Point>);
-    #[doc = "See [`_cef_display_t::convert_point_from_pixels`] for more documentation."]
-    fn convert_point_from_pixels(&self, point: Option<&mut Point>);
-    #[doc = "See [`_cef_display_t::get_bounds`] for more documentation."]
-    fn bounds(&self) -> Rect;
-    #[doc = "See [`_cef_display_t::get_work_area`] for more documentation."]
-    fn work_area(&self) -> Rect;
-    #[doc = "See [`_cef_display_t::get_rotation`] for more documentation."]
-    fn rotation(&self) -> ::std::os::raw::c_int;
-    fn get_raw(&self) -> *mut _cef_display_t;
-}
-impl ImplDisplay for Display {
-    fn id(&self) -> i64 {
-        unsafe {
-            self.0
-                .get_id
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn device_scale_factor(&self) -> f32 {
-        unsafe {
-            self.0
-                .get_device_scale_factor
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn convert_point_to_pixels(&self, point: Option<&mut Point>) {
-        unsafe {
-            if let Some(f) = self.0.convert_point_to_pixels {
-                let arg_point = point;
-                let arg_self_ = self.into_raw();
-                let mut arg_point = arg_point.cloned().map(|arg| arg.into());
-                let arg_point = arg_point
-                    .as_mut()
-                    .map(std::ptr::from_mut)
-                    .unwrap_or(std::ptr::null_mut());
-                f(arg_self_, arg_point);
-            }
-        }
-    }
-    fn convert_point_from_pixels(&self, point: Option<&mut Point>) {
-        unsafe {
-            if let Some(f) = self.0.convert_point_from_pixels {
-                let arg_point = point;
-                let arg_self_ = self.into_raw();
-                let mut arg_point = arg_point.cloned().map(|arg| arg.into());
-                let arg_point = arg_point
-                    .as_mut()
-                    .map(std::ptr::from_mut)
-                    .unwrap_or(std::ptr::null_mut());
-                f(arg_self_, arg_point);
-            }
-        }
-    }
-    fn bounds(&self) -> Rect {
-        unsafe {
-            self.0
-                .get_bounds
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn work_area(&self) -> Rect {
-        unsafe {
-            self.0
-                .get_work_area
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn rotation(&self) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .get_rotation
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn get_raw(&self) -> *mut _cef_display_t {
-        unsafe { RefGuard::into_raw(&self.0) }
-    }
-}
-impl Rc for _cef_display_t {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.base.as_base()
-    }
-}
-impl Rc for Display {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.0.as_base()
-    }
-}
-impl ConvertParam<*mut _cef_display_t> for &Display {
-    fn into_raw(self) -> *mut _cef_display_t {
-        ImplDisplay::get_raw(self)
-    }
-}
-impl ConvertParam<*mut _cef_display_t> for &mut Display {
-    fn into_raw(self) -> *mut _cef_display_t {
-        ImplDisplay::get_raw(self)
-    }
-}
-impl ConvertReturnValue<Display> for *mut _cef_display_t {
-    fn wrap_result(self) -> Display {
-        Display(unsafe { RefGuard::from_raw(self) })
-    }
-}
-impl From<Display> for *mut _cef_display_t {
-    fn from(value: Display) -> Self {
-        let object = ImplDisplay::get_raw(&value);
-        std::mem::forget(value);
-        object
-    }
-}
-
-/// See [`_cef_overlay_controller_t`] for more documentation.
-#[derive(Clone)]
-pub struct OverlayController(RefGuard<_cef_overlay_controller_t>);
-pub trait ImplOverlayController: Clone + Sized + Rc {
-    #[doc = "See [`_cef_overlay_controller_t::is_valid`] for more documentation."]
-    fn is_valid(&self) -> ::std::os::raw::c_int;
-    #[doc = "See [`_cef_overlay_controller_t::is_same`] for more documentation."]
-    fn is_same(&self, that: Option<&mut OverlayController>) -> ::std::os::raw::c_int;
-    #[doc = "See [`_cef_overlay_controller_t::get_contents_view`] for more documentation."]
-    fn contents_view(&self) -> Option<View>;
-    #[doc = "See [`_cef_overlay_controller_t::get_window`] for more documentation."]
-    fn window(&self) -> Option<Window>;
-    #[doc = "See [`_cef_overlay_controller_t::get_docking_mode`] for more documentation."]
-    fn docking_mode(&self) -> DockingMode;
-    #[doc = "See [`_cef_overlay_controller_t::destroy`] for more documentation."]
-    fn destroy(&self);
-    #[doc = "See [`_cef_overlay_controller_t::set_bounds`] for more documentation."]
-    fn set_bounds(&self, bounds: Option<&Rect>);
-    #[doc = "See [`_cef_overlay_controller_t::get_bounds`] for more documentation."]
-    fn bounds(&self) -> Rect;
-    #[doc = "See [`_cef_overlay_controller_t::get_bounds_in_screen`] for more documentation."]
-    fn bounds_in_screen(&self) -> Rect;
-    #[doc = "See [`_cef_overlay_controller_t::set_size`] for more documentation."]
-    fn set_size(&self, size: Option<&Size>);
-    #[doc = "See [`_cef_overlay_controller_t::get_size`] for more documentation."]
-    fn size(&self) -> Size;
-    #[doc = "See [`_cef_overlay_controller_t::set_position`] for more documentation."]
-    fn set_position(&self, position: Option<&Point>);
-    #[doc = "See [`_cef_overlay_controller_t::get_position`] for more documentation."]
-    fn position(&self) -> Point;
-    #[doc = "See [`_cef_overlay_controller_t::set_insets`] for more documentation."]
-    fn set_insets(&self, insets: Option<&Insets>);
-    #[doc = "See [`_cef_overlay_controller_t::get_insets`] for more documentation."]
-    fn insets(&self) -> Insets;
-    #[doc = "See [`_cef_overlay_controller_t::size_to_preferred_size`] for more documentation."]
-    fn size_to_preferred_size(&self);
-    #[doc = "See [`_cef_overlay_controller_t::set_visible`] for more documentation."]
-    fn set_visible(&self, visible: ::std::os::raw::c_int);
-    #[doc = "See [`_cef_overlay_controller_t::is_visible`] for more documentation."]
-    fn is_visible(&self) -> ::std::os::raw::c_int;
-    #[doc = "See [`_cef_overlay_controller_t::is_drawn`] for more documentation."]
-    fn is_drawn(&self) -> ::std::os::raw::c_int;
-    fn get_raw(&self) -> *mut _cef_overlay_controller_t;
-}
-impl ImplOverlayController for OverlayController {
-    fn is_valid(&self) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .is_valid
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn is_same(&self, that: Option<&mut OverlayController>) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .is_same
-                .map(|f| {
-                    let arg_that = that;
-                    let arg_self_ = self.into_raw();
-                    let arg_that = arg_that
-                        .map(|arg| {
-                            arg.add_ref();
-                            ImplOverlayController::get_raw(arg)
-                        })
-                        .unwrap_or(std::ptr::null_mut());
-                    let result = f(arg_self_, arg_that);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn contents_view(&self) -> Option<View> {
-        unsafe {
-            self.0
-                .get_contents_view
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    if result.is_null() {
-                        None
-                    } else {
-                        Some(result.wrap_result())
-                    }
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn window(&self) -> Option<Window> {
-        unsafe {
-            self.0
-                .get_window
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    if result.is_null() {
-                        None
-                    } else {
-                        Some(result.wrap_result())
-                    }
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn docking_mode(&self) -> DockingMode {
-        unsafe {
-            self.0
-                .get_docking_mode
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn destroy(&self) {
-        unsafe {
-            if let Some(f) = self.0.destroy {
-                let arg_self_ = self.into_raw();
-                f(arg_self_);
-            }
-        }
-    }
-    fn set_bounds(&self, bounds: Option<&Rect>) {
-        unsafe {
-            if let Some(f) = self.0.set_bounds {
-                let arg_bounds = bounds;
-                let arg_self_ = self.into_raw();
-                let arg_bounds = arg_bounds.cloned().map(|arg| arg.into());
-                let arg_bounds = arg_bounds
-                    .as_ref()
-                    .map(std::ptr::from_ref)
-                    .unwrap_or(std::ptr::null());
-                f(arg_self_, arg_bounds);
-            }
-        }
-    }
-    fn bounds(&self) -> Rect {
-        unsafe {
-            self.0
-                .get_bounds
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn bounds_in_screen(&self) -> Rect {
-        unsafe {
-            self.0
-                .get_bounds_in_screen
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn set_size(&self, size: Option<&Size>) {
-        unsafe {
-            if let Some(f) = self.0.set_size {
-                let arg_size = size;
-                let arg_self_ = self.into_raw();
-                let arg_size = arg_size.cloned().map(|arg| arg.into());
-                let arg_size = arg_size
-                    .as_ref()
-                    .map(std::ptr::from_ref)
-                    .unwrap_or(std::ptr::null());
-                f(arg_self_, arg_size);
-            }
-        }
-    }
-    fn size(&self) -> Size {
-        unsafe {
-            self.0
-                .get_size
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn set_position(&self, position: Option<&Point>) {
-        unsafe {
-            if let Some(f) = self.0.set_position {
-                let arg_position = position;
-                let arg_self_ = self.into_raw();
-                let arg_position = arg_position.cloned().map(|arg| arg.into());
-                let arg_position = arg_position
-                    .as_ref()
-                    .map(std::ptr::from_ref)
-                    .unwrap_or(std::ptr::null());
-                f(arg_self_, arg_position);
-            }
-        }
-    }
-    fn position(&self) -> Point {
-        unsafe {
-            self.0
-                .get_position
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn set_insets(&self, insets: Option<&Insets>) {
-        unsafe {
-            if let Some(f) = self.0.set_insets {
-                let arg_insets = insets;
-                let arg_self_ = self.into_raw();
-                let arg_insets = arg_insets.cloned().map(|arg| arg.into());
-                let arg_insets = arg_insets
-                    .as_ref()
-                    .map(std::ptr::from_ref)
-                    .unwrap_or(std::ptr::null());
-                f(arg_self_, arg_insets);
-            }
-        }
-    }
-    fn insets(&self) -> Insets {
-        unsafe {
-            self.0
-                .get_insets
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn size_to_preferred_size(&self) {
-        unsafe {
-            if let Some(f) = self.0.size_to_preferred_size {
-                let arg_self_ = self.into_raw();
-                f(arg_self_);
-            }
-        }
-    }
-    fn set_visible(&self, visible: ::std::os::raw::c_int) {
-        unsafe {
-            if let Some(f) = self.0.set_visible {
-                let arg_visible = visible;
-                let arg_self_ = self.into_raw();
-                f(arg_self_, arg_visible);
-            }
-        }
-    }
-    fn is_visible(&self) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .is_visible
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn is_drawn(&self) -> ::std::os::raw::c_int {
-        unsafe {
-            self.0
-                .is_drawn
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn get_raw(&self) -> *mut _cef_overlay_controller_t {
-        unsafe { RefGuard::into_raw(&self.0) }
-    }
-}
-impl Rc for _cef_overlay_controller_t {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.base.as_base()
-    }
-}
-impl Rc for OverlayController {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.0.as_base()
-    }
-}
-impl ConvertParam<*mut _cef_overlay_controller_t> for &OverlayController {
-    fn into_raw(self) -> *mut _cef_overlay_controller_t {
-        ImplOverlayController::get_raw(self)
-    }
-}
-impl ConvertParam<*mut _cef_overlay_controller_t> for &mut OverlayController {
-    fn into_raw(self) -> *mut _cef_overlay_controller_t {
-        ImplOverlayController::get_raw(self)
-    }
-}
-impl ConvertReturnValue<OverlayController> for *mut _cef_overlay_controller_t {
-    fn wrap_result(self) -> OverlayController {
-        OverlayController(unsafe { RefGuard::from_raw(self) })
-    }
-}
-impl From<OverlayController> for *mut _cef_overlay_controller_t {
-    fn from(value: OverlayController) -> Self {
-        let object = ImplOverlayController::get_raw(&value);
-        std::mem::forget(value);
-        object
-    }
-}
-
-/// See [`_cef_panel_delegate_t`] for more documentation.
-#[derive(Clone)]
-pub struct PanelDelegate(RefGuard<_cef_panel_delegate_t>);
-impl PanelDelegate {
-    pub fn new<T>(interface: T) -> Self
-    where
-        T: WrapPanelDelegate,
-    {
-        unsafe {
-            let mut cef_object = std::mem::zeroed();
-            <T as ImplPanelDelegate>::init_methods(&mut cef_object);
-            let object = RcImpl::new(cef_object, interface);
-            <T as WrapPanelDelegate>::wrap_rc(&mut (*object).interface, object);
-            let object: *mut _cef_panel_delegate_t = object.cast();
-            object.wrap_result()
-        }
-    }
-}
-pub trait WrapPanelDelegate: ImplPanelDelegate {
-    fn wrap_rc(&mut self, object: *mut RcImpl<_cef_panel_delegate_t, Self>);
-}
-pub trait ImplPanelDelegate: ImplViewDelegate {
-    fn init_methods(object: &mut _cef_panel_delegate_t) {
-        impl_cef_view_delegate_t::init_methods::<Self, _cef_panel_delegate_t>(&mut object.base);
-        impl_cef_panel_delegate_t::init_methods::<Self, _cef_panel_delegate_t>(object);
-    }
-    fn get_raw(&self) -> *mut _cef_panel_delegate_t {
-        <Self as ImplViewDelegate>::get_raw(self).cast()
-    }
-}
-#[doc = "Implement the [`WrapPanelDelegate`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl PanelDelegate` block you can override default\nmethods implemented by the [`ImplPanelDelegate`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_panel_delegate! {\n    struct MyPanelDelegate {\n        payload: String,\n    }\n\n    impl ViewDelegate {\n        // ...\n    }\n\n    impl PanelDelegate {\n        // ...\n    }\n}\n\nfn make_my_struct() -> PanelDelegate {\n    MyPanelDelegate::new(\"payload\".to_string())\n}\n```"]
-#[macro_export]
-macro_rules ! wrap_panel_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl PanelDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_panel_delegate ! { $ vis struct $ name { } impl PanelDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl PanelDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_panel_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> PanelDelegate { PanelDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapPanelDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_panel_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_view_delegate_attrs_name]) * fn $ wrap_view_delegate_method_name (& $ wrap_view_delegate_self $ (, $ wrap_view_delegate_arg_name : $ wrap_view_delegate_arg_type) *) $ (-> $ wrap_view_delegate_return_type) ? { $ ($ wrap_view_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplPanelDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_panel_delegate_t { self . cef_object . cast () } } } ; }
-mod impl_cef_panel_delegate_t {
-    use super::*;
-    pub fn init_methods<I: ImplPanelDelegate, R: Rc>(object: &mut _cef_panel_delegate_t) {}
-}
-impl ImplViewDelegate for PanelDelegate {
-    fn preferred_size(&self, view: Option<&mut View>) -> Size {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .preferred_size(view)
-    }
-    fn minimum_size(&self, view: Option<&mut View>) -> Size {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .minimum_size(view)
-    }
-    fn maximum_size(&self, view: Option<&mut View>) -> Size {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .maximum_size(view)
-    }
-    fn height_for_width(
-        &self,
-        view: Option<&mut View>,
-        width: ::std::os::raw::c_int,
-    ) -> ::std::os::raw::c_int {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .height_for_width(view, width)
-    }
-    fn on_parent_view_changed(
-        &self,
-        view: Option<&mut View>,
-        added: ::std::os::raw::c_int,
-        parent: Option<&mut View>,
-    ) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_parent_view_changed(view, added, parent)
-    }
-    fn on_child_view_changed(
-        &self,
-        view: Option<&mut View>,
-        added: ::std::os::raw::c_int,
-        child: Option<&mut View>,
-    ) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_child_view_changed(view, added, child)
-    }
-    fn on_window_changed(&self, view: Option<&mut View>, added: ::std::os::raw::c_int) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_window_changed(view, added)
-    }
-    fn on_layout_changed(&self, view: Option<&mut View>, new_bounds: Option<&Rect>) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_layout_changed(view, new_bounds)
-    }
-    fn on_focus(&self, view: Option<&mut View>) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_focus(view)
-    }
-    fn on_blur(&self, view: Option<&mut View>) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_blur(view)
-    }
-    fn on_theme_changed(&self, view: Option<&mut View>) {
-        ViewDelegate(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&self.0).cast()) })
-            .on_theme_changed(view)
-    }
-    fn get_raw(&self) -> *mut _cef_view_delegate_t {
-        unsafe { RefGuard::into_raw(&self.0).cast() }
-    }
-}
-impl ImplPanelDelegate for PanelDelegate {
-    fn get_raw(&self) -> *mut _cef_panel_delegate_t {
-        unsafe { RefGuard::into_raw(&self.0) }
-    }
-}
-impl Rc for _cef_panel_delegate_t {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.base.as_base()
-    }
-}
-impl Rc for PanelDelegate {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.0.as_base()
-    }
-}
-impl ConvertParam<*mut _cef_panel_delegate_t> for &PanelDelegate {
-    fn into_raw(self) -> *mut _cef_panel_delegate_t {
-        ImplPanelDelegate::get_raw(self)
-    }
-}
-impl ConvertParam<*mut _cef_panel_delegate_t> for &mut PanelDelegate {
-    fn into_raw(self) -> *mut _cef_panel_delegate_t {
-        ImplPanelDelegate::get_raw(self)
-    }
-}
-impl ConvertReturnValue<PanelDelegate> for *mut _cef_panel_delegate_t {
-    fn wrap_result(self) -> PanelDelegate {
-        PanelDelegate(unsafe { RefGuard::from_raw(self) })
-    }
-}
-impl From<PanelDelegate> for *mut _cef_panel_delegate_t {
-    fn from(value: PanelDelegate) -> Self {
-        let object = ImplPanelDelegate::get_raw(&value);
-        std::mem::forget(value);
-        object
-    }
-}
-
-/// See [`_cef_panel_t`] for more documentation.
-#[derive(Clone)]
-pub struct Panel(RefGuard<_cef_panel_t>);
-pub trait ImplPanel: ImplView {
-    #[doc = "See [`_cef_panel_t::as_window`] for more documentation."]
-    fn as_window(&self) -> Option<Window>;
-    #[doc = "See [`_cef_panel_t::set_to_fill_layout`] for more documentation."]
-    fn set_to_fill_layout(&self) -> Option<FillLayout>;
-    #[doc = "See [`_cef_panel_t::set_to_box_layout`] for more documentation."]
-    fn set_to_box_layout(&self, settings: Option<&BoxLayoutSettings>) -> Option<BoxLayout>;
-    #[doc = "See [`_cef_panel_t::get_layout`] for more documentation."]
-    fn get_layout(&self) -> Option<Layout>;
-    #[doc = "See [`_cef_panel_t::layout`] for more documentation."]
-    fn layout(&self);
-    #[doc = "See [`_cef_panel_t::add_child_view`] for more documentation."]
-    fn add_child_view(&self, view: Option<&mut View>);
-    #[doc = "See [`_cef_panel_t::add_child_view_at`] for more documentation."]
-    fn add_child_view_at(&self, view: Option<&mut View>, index: ::std::os::raw::c_int);
-    #[doc = "See [`_cef_panel_t::reorder_child_view`] for more documentation."]
-    fn reorder_child_view(&self, view: Option<&mut View>, index: ::std::os::raw::c_int);
-    #[doc = "See [`_cef_panel_t::remove_child_view`] for more documentation."]
-    fn remove_child_view(&self, view: Option<&mut View>);
-    #[doc = "See [`_cef_panel_t::remove_all_child_views`] for more documentation."]
-    fn remove_all_child_views(&self);
-    #[doc = "See [`_cef_panel_t::get_child_view_count`] for more documentation."]
-    fn child_view_count(&self) -> usize;
-    #[doc = "See [`_cef_panel_t::get_child_view_at`] for more documentation."]
-    fn child_view_at(&self, index: ::std::os::raw::c_int) -> Option<View>;
-    fn get_raw(&self) -> *mut _cef_panel_t {
-        <Self as ImplView>::get_raw(self).cast()
-    }
-}
-impl ImplView for Panel {
-    fn as_browser_view(&self) -> Option<BrowserView> {
-        View::from(self).as_browser_view()
-    }
-    fn as_button(&self) -> Option<Button> {
-        View::from(self).as_button()
-    }
-    fn as_panel(&self) -> Option<Panel> {
-        View::from(self).as_panel()
-    }
-    fn as_scroll_view(&self) -> Option<ScrollView> {
-        View::from(self).as_scroll_view()
-    }
-    fn as_textfield(&self) -> Option<Textfield> {
-        View::from(self).as_textfield()
-    }
-    fn type_string(&self) -> CefStringUserfree {
-        View::from(self).type_string()
-    }
-    fn to_string(&self, include_children: ::std::os::raw::c_int) -> CefStringUserfree {
-        View::from(self).to_string(include_children)
-    }
-    fn is_valid(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_valid()
-    }
-    fn is_attached(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_attached()
-    }
-    fn is_same(&self, that: Option<&mut View>) -> ::std::os::raw::c_int {
-        View::from(self).is_same(that)
-    }
-    fn delegate(&self) -> Option<ViewDelegate> {
-        View::from(self).delegate()
-    }
-    fn window(&self) -> Option<Window> {
-        View::from(self).window()
-    }
-    fn id(&self) -> ::std::os::raw::c_int {
-        View::from(self).id()
-    }
-    fn set_id(&self, id: ::std::os::raw::c_int) {
-        View::from(self).set_id(id)
-    }
-    fn group_id(&self) -> ::std::os::raw::c_int {
-        View::from(self).group_id()
-    }
-    fn set_group_id(&self, group_id: ::std::os::raw::c_int) {
-        View::from(self).set_group_id(group_id)
-    }
-    fn parent_view(&self) -> Option<View> {
-        View::from(self).parent_view()
-    }
-    fn view_for_id(&self, id: ::std::os::raw::c_int) -> Option<View> {
-        View::from(self).view_for_id(id)
-    }
-    fn set_bounds(&self, bounds: Option<&Rect>) {
-        View::from(self).set_bounds(bounds)
-    }
-    fn bounds(&self) -> Rect {
-        View::from(self).bounds()
-    }
-    fn bounds_in_screen(&self) -> Rect {
-        View::from(self).bounds_in_screen()
-    }
-    fn set_size(&self, size: Option<&Size>) {
-        View::from(self).set_size(size)
-    }
-    fn size(&self) -> Size {
-        View::from(self).size()
-    }
-    fn set_position(&self, position: Option<&Point>) {
-        View::from(self).set_position(position)
-    }
-    fn position(&self) -> Point {
-        View::from(self).position()
-    }
-    fn set_insets(&self, insets: Option<&Insets>) {
-        View::from(self).set_insets(insets)
-    }
-    fn insets(&self) -> Insets {
-        View::from(self).insets()
-    }
-    fn preferred_size(&self) -> Size {
-        View::from(self).preferred_size()
-    }
-    fn size_to_preferred_size(&self) {
-        View::from(self).size_to_preferred_size()
-    }
-    fn minimum_size(&self) -> Size {
-        View::from(self).minimum_size()
-    }
-    fn maximum_size(&self) -> Size {
-        View::from(self).maximum_size()
-    }
-    fn height_for_width(&self, width: ::std::os::raw::c_int) -> ::std::os::raw::c_int {
-        View::from(self).height_for_width(width)
-    }
-    fn invalidate_layout(&self) {
-        View::from(self).invalidate_layout()
-    }
-    fn set_visible(&self, visible: ::std::os::raw::c_int) {
-        View::from(self).set_visible(visible)
-    }
-    fn is_visible(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_visible()
-    }
-    fn is_drawn(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_drawn()
-    }
-    fn set_enabled(&self, enabled: ::std::os::raw::c_int) {
-        View::from(self).set_enabled(enabled)
-    }
-    fn is_enabled(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_enabled()
-    }
-    fn set_focusable(&self, focusable: ::std::os::raw::c_int) {
-        View::from(self).set_focusable(focusable)
-    }
-    fn is_focusable(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_focusable()
-    }
-    fn is_accessibility_focusable(&self) -> ::std::os::raw::c_int {
-        View::from(self).is_accessibility_focusable()
-    }
-    fn has_focus(&self) -> ::std::os::raw::c_int {
-        View::from(self).has_focus()
-    }
-    fn request_focus(&self) {
-        View::from(self).request_focus()
-    }
-    fn set_background_color(&self, color: u32) {
-        View::from(self).set_background_color(color)
-    }
-    fn background_color(&self) -> cef_color_t {
-        View::from(self).background_color()
-    }
-    fn theme_color(&self, color_id: ::std::os::raw::c_int) -> cef_color_t {
-        View::from(self).theme_color(color_id)
-    }
-    fn convert_point_to_screen(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_to_screen(point)
-    }
-    fn convert_point_from_screen(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_from_screen(point)
-    }
-    fn convert_point_to_window(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_to_window(point)
-    }
-    fn convert_point_from_window(&self, point: Option<&mut Point>) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_from_window(point)
-    }
-    fn convert_point_to_view(
-        &self,
-        view: Option<&mut View>,
-        point: Option<&mut Point>,
-    ) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_to_view(view, point)
-    }
-    fn convert_point_from_view(
-        &self,
-        view: Option<&mut View>,
-        point: Option<&mut Point>,
-    ) -> ::std::os::raw::c_int {
-        View::from(self).convert_point_from_view(view, point)
-    }
-    fn get_raw(&self) -> *mut _cef_view_t {
-        unsafe { RefGuard::into_raw(&self.0).cast() }
-    }
-}
-impl std::convert::From<&Panel> for View {
-    fn from(from: &Panel) -> Self {
-        View(unsafe { RefGuard::from_raw_add_ref(RefGuard::into_raw(&from.0).cast()) })
-    }
-}
-impl ImplPanel for Panel {
-    fn as_window(&self) -> Option<Window> {
-        unsafe {
-            self.0
-                .as_window
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    if result.is_null() {
-                        None
-                    } else {
-                        Some(result.wrap_result())
-                    }
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn set_to_fill_layout(&self) -> Option<FillLayout> {
-        unsafe {
-            self.0
-                .set_to_fill_layout
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    if result.is_null() {
-                        None
-                    } else {
-                        Some(result.wrap_result())
-                    }
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn set_to_box_layout(&self, settings: Option<&BoxLayoutSettings>) -> Option<BoxLayout> {
-        unsafe {
-            self.0
-                .set_to_box_layout
-                .map(|f| {
-                    let arg_settings = settings;
-                    let arg_self_ = self.into_raw();
-                    let arg_settings = arg_settings.cloned().map(|arg| arg.into());
-                    let arg_settings = arg_settings
-                        .as_ref()
-                        .map(std::ptr::from_ref)
-                        .unwrap_or(std::ptr::null());
-                    let result = f(arg_self_, arg_settings);
-                    if result.is_null() {
-                        None
-                    } else {
-                        Some(result.wrap_result())
-                    }
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn get_layout(&self) -> Option<Layout> {
-        unsafe {
-            self.0
-                .get_layout
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    if result.is_null() {
-                        None
-                    } else {
-                        Some(result.wrap_result())
-                    }
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn layout(&self) {
-        unsafe {
-            if let Some(f) = self.0.layout {
-                let arg_self_ = self.into_raw();
-                f(arg_self_);
-            }
-        }
-    }
-    fn add_child_view(&self, view: Option<&mut View>) {
-        unsafe {
-            if let Some(f) = self.0.add_child_view {
-                let arg_view = view;
-                let arg_self_ = self.into_raw();
-                let arg_view = arg_view
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplView::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                f(arg_self_, arg_view);
-            }
-        }
-    }
-    fn add_child_view_at(&self, view: Option<&mut View>, index: ::std::os::raw::c_int) {
-        unsafe {
-            if let Some(f) = self.0.add_child_view_at {
-                let (arg_view, arg_index) = (view, index);
-                let arg_self_ = self.into_raw();
-                let arg_view = arg_view
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplView::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                f(arg_self_, arg_view, arg_index);
-            }
-        }
-    }
-    fn reorder_child_view(&self, view: Option<&mut View>, index: ::std::os::raw::c_int) {
-        unsafe {
-            if let Some(f) = self.0.reorder_child_view {
-                let (arg_view, arg_index) = (view, index);
-                let arg_self_ = self.into_raw();
-                let arg_view = arg_view
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplView::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                f(arg_self_, arg_view, arg_index);
-            }
-        }
-    }
-    fn remove_child_view(&self, view: Option<&mut View>) {
-        unsafe {
-            if let Some(f) = self.0.remove_child_view {
-                let arg_view = view;
-                let arg_self_ = self.into_raw();
-                let arg_view = arg_view
-                    .map(|arg| {
-                        arg.add_ref();
-                        ImplView::get_raw(arg)
-                    })
-                    .unwrap_or(std::ptr::null_mut());
-                f(arg_self_, arg_view);
-            }
-        }
-    }
-    fn remove_all_child_views(&self) {
-        unsafe {
-            if let Some(f) = self.0.remove_all_child_views {
-                let arg_self_ = self.into_raw();
-                f(arg_self_);
-            }
-        }
-    }
-    fn child_view_count(&self) -> usize {
-        unsafe {
-            self.0
-                .get_child_view_count
-                .map(|f| {
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_);
-                    result.wrap_result()
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn child_view_at(&self, index: ::std::os::raw::c_int) -> Option<View> {
-        unsafe {
-            self.0
-                .get_child_view_at
-                .map(|f| {
-                    let arg_index = index;
-                    let arg_self_ = self.into_raw();
-                    let result = f(arg_self_, arg_index);
-                    if result.is_null() {
-                        None
-                    } else {
-                        Some(result.wrap_result())
-                    }
-                })
-                .unwrap_or_default()
-        }
-    }
-    fn get_raw(&self) -> *mut _cef_panel_t {
-        unsafe { RefGuard::into_raw(&self.0) }
-    }
-}
-impl Rc for _cef_panel_t {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.base.as_base()
-    }
-}
-impl Rc for Panel {
-    fn as_base(&self) -> &_cef_base_ref_counted_t {
-        self.0.as_base()
-    }
-}
-impl ConvertParam<*mut _cef_panel_t> for &Panel {
-    fn into_raw(self) -> *mut _cef_panel_t {
-        ImplPanel::get_raw(self)
-    }
-}
-impl ConvertParam<*mut _cef_panel_t> for &mut Panel {
-    fn into_raw(self) -> *mut _cef_panel_t {
-        ImplPanel::get_raw(self)
-    }
-}
-impl ConvertReturnValue<Panel> for *mut _cef_panel_t {
-    fn wrap_result(self) -> Panel {
-        Panel(unsafe { RefGuard::from_raw(self) })
-    }
-}
-impl From<Panel> for *mut _cef_panel_t {
-    fn from(value: Panel) -> Self {
-        let object = ImplPanel::get_raw(&value);
-        std::mem::forget(value);
-        object
-    }
-}
-
 /// See [`_cef_window_delegate_t`] for more documentation.
 #[derive(Clone)]
 pub struct WindowDelegate(RefGuard<_cef_window_delegate_t>);
@@ -40585,7 +42806,7 @@ pub trait ImplWindowDelegate: ImplPanelDelegate {
 }
 #[doc = "Implement the [`WrapWindowDelegate`] trait for the specified struct. You can declare more\nmembers for your struct, and in the `impl WindowDelegate` block you can override default\nmethods implemented by the [`ImplWindowDelegate`] trait.\n\n# Example\n```rust\n# use cef::{*, rc::*};\n\nwrap_window_delegate! {\n    struct MyWindowDelegate {\n        payload: String,\n    }\n\n    impl ViewDelegate {\n        // ...\n    }\n\n    impl PanelDelegate {\n        // ...\n    }\n\n    impl WindowDelegate {\n        // ...\n    }\n}\n\nfn make_my_struct() -> WindowDelegate {\n    MyWindowDelegate::new(\"payload\".to_string())\n}\n```"]
 #[macro_export]
-macro_rules ! wrap_window_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl PanelDelegate { $ ($ (# [$ wrap_panel_delegate_attrs_name : meta]) * fn $ wrap_panel_delegate_method_name : ident (& $ wrap_panel_delegate_self : ident $ (, $ wrap_panel_delegate_arg_name : ident : $ wrap_panel_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_panel_delegate_return_type : ty) ? { $ ($ wrap_panel_delegate_body : tt) * }) * } impl WindowDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_window_delegate ! { $ vis struct $ name { } impl WindowDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl PanelDelegate { $ ($ (# [$ wrap_panel_delegate_attrs_name : meta]) * fn $ wrap_panel_delegate_method_name : ident (& $ wrap_panel_delegate_self : ident $ (, $ wrap_panel_delegate_arg_name : ident : $ wrap_panel_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_panel_delegate_return_type : ty) ? { $ ($ wrap_panel_delegate_body : tt) * }) * } impl WindowDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_window_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { pub fn new ($ ($ field_name : $ field_type) , *) -> WindowDelegate { WindowDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapWindowDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_window_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_view_delegate_attrs_name]) * fn $ wrap_view_delegate_method_name (& $ wrap_view_delegate_self $ (, $ wrap_view_delegate_arg_name : $ wrap_view_delegate_arg_type) *) $ (-> $ wrap_view_delegate_return_type) ? { $ ($ wrap_view_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplPanelDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_panel_delegate_attrs_name]) * fn $ wrap_panel_delegate_method_name (& $ wrap_panel_delegate_self $ (, $ wrap_panel_delegate_arg_name : $ wrap_panel_delegate_arg_type) *) $ (-> $ wrap_panel_delegate_return_type) ? { $ ($ wrap_panel_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_panel_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplWindowDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_window_delegate_t { self . cef_object . cast () } } } ; }
+macro_rules ! wrap_window_delegate { ($ vis : vis struct $ name : ident ; impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl PanelDelegate { $ ($ (# [$ wrap_panel_delegate_attrs_name : meta]) * fn $ wrap_panel_delegate_method_name : ident (& $ wrap_panel_delegate_self : ident $ (, $ wrap_panel_delegate_arg_name : ident : $ wrap_panel_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_panel_delegate_return_type : ty) ? { $ ($ wrap_panel_delegate_body : tt) * }) * } impl WindowDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { wrap_window_delegate ! { $ vis struct $ name { } impl WindowDelegate { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * } } } ; ($ vis : vis struct $ name : ident $ (< $ ($ generic_type : ident : $ first_generic_type_bound : tt $ (+ $ generic_type_bound : tt) *) , + $ (,) ? >) ? { $ ($ field_vis : vis $ field_name : ident : $ field_type : ty) , * $ (,) ? } impl ViewDelegate { $ ($ (# [$ wrap_view_delegate_attrs_name : meta]) * fn $ wrap_view_delegate_method_name : ident (& $ wrap_view_delegate_self : ident $ (, $ wrap_view_delegate_arg_name : ident : $ wrap_view_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_view_delegate_return_type : ty) ? { $ ($ wrap_view_delegate_body : tt) * }) * } impl PanelDelegate { $ ($ (# [$ wrap_panel_delegate_attrs_name : meta]) * fn $ wrap_panel_delegate_method_name : ident (& $ wrap_panel_delegate_self : ident $ (, $ wrap_panel_delegate_arg_name : ident : $ wrap_panel_delegate_arg_type : ty) * $ (,) ?) $ (-> $ wrap_panel_delegate_return_type : ty) ? { $ ($ wrap_panel_delegate_body : tt) * }) * } impl WindowDelegate { $ ($ (# [$ attrs_name : meta]) * fn $ method_name : ident (& $ self : ident $ (, $ arg_name : ident : $ arg_type : ty) * $ (,) ?) $ (-> $ return_type : ty) ? { $ ($ body : tt) * }) * }) => { $ vis struct $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ field_vis $ field_name : $ field_type ,) * cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_window_delegate_t , Self > } impl $ (< $ ($ generic_type ,) + >) ? $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { # [allow (clippy :: new_ret_no_self)] pub fn new ($ ($ field_name : $ field_type) , *) -> WindowDelegate { WindowDelegate :: new (Self { $ ($ field_name ,) * cef_object : std :: ptr :: null_mut () , }) } } impl $ (< $ ($ generic_type ,) + >) ? WrapWindowDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn wrap_rc (& mut self , cef_object : * mut $ crate :: rc :: RcImpl < $ crate :: sys :: _cef_window_delegate_t , Self >) { self . cef_object = cef_object ; } } impl $ (< $ ($ generic_type ,) + >) ? Clone for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn clone (& self) -> Self { unsafe { let rc_impl = & mut * self . cef_object ; rc_impl . interface . add_ref () ; } Self { $ ($ field_name : self . $ field_name . clone () ,) * cef_object : self . cef_object , } } } impl $ (< $ ($ generic_type ,) + >) ? $ crate :: rc :: Rc for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { fn as_base (& self) -> & $ crate :: sys :: cef_base_ref_counted_t { unsafe { let base = & * self . cef_object ; std :: mem :: transmute (& base . cef_object) } } } impl $ (< $ ($ generic_type ,) + >) ? ImplViewDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_view_delegate_attrs_name]) * fn $ wrap_view_delegate_method_name (& $ wrap_view_delegate_self $ (, $ wrap_view_delegate_arg_name : $ wrap_view_delegate_arg_type) *) $ (-> $ wrap_view_delegate_return_type) ? { $ ($ wrap_view_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_view_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplPanelDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ wrap_panel_delegate_attrs_name]) * fn $ wrap_panel_delegate_method_name (& $ wrap_panel_delegate_self $ (, $ wrap_panel_delegate_arg_name : $ wrap_panel_delegate_arg_type) *) $ (-> $ wrap_panel_delegate_return_type) ? { $ ($ wrap_panel_delegate_body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_panel_delegate_t { self . cef_object . cast () } } impl $ (< $ ($ generic_type ,) + >) ? ImplWindowDelegate for $ name $ (< $ ($ generic_type ,) + >) ? $ (where $ ($ generic_type : $ first_generic_type_bound $ (+ $ generic_type_bound) * ,) +) ? { $ ($ (# [$ attrs_name]) * fn $ method_name (& $ self $ (, $ arg_name : $ arg_type) *) $ (-> $ return_type) ? { $ ($ body) * }) * fn get_raw (& self) -> * mut $ crate :: sys :: _cef_window_delegate_t { self . cef_object . cast () } } } ; }
 mod impl_cef_window_delegate_t {
     use super::*;
     pub fn init_methods<I: ImplWindowDelegate, R: Rc>(object: &mut _cef_window_delegate_t) {
@@ -42830,6 +45051,12 @@ impl ContentSettingTypes {
     pub const NUM_VALUES: Self =
         Self(cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_NUM_VALUES);
 }
+impl ContentSettingTypes {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ContentSettingTypes {
     fn default() -> Self {
         Self(cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_COOKIES)
@@ -42879,6 +45106,12 @@ impl ContentSettingValues {
     pub const NUM_VALUES: Self =
         Self(cef_content_setting_values_t::CEF_CONTENT_SETTING_VALUE_NUM_VALUES);
 }
+impl ContentSettingValues {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ContentSettingValues {
     fn default() -> Self {
         Self(cef_content_setting_values_t::CEF_CONTENT_SETTING_VALUE_DEFAULT)
@@ -42916,6 +45149,12 @@ impl ColorType {
     #[doc = "See [`cef_color_type_t::CEF_COLOR_TYPE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_color_type_t::CEF_COLOR_TYPE_NUM_VALUES);
 }
+impl ColorType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ColorType {
     fn default() -> Self {
         Self(cef_color_type_t::CEF_COLOR_TYPE_RGBA_8888)
@@ -42952,6 +45191,12 @@ impl RuntimeStyle {
     pub const CHROME: Self = Self(cef_runtime_style_t::CEF_RUNTIME_STYLE_CHROME);
     #[doc = "See [`cef_runtime_style_t::CEF_RUNTIME_STYLE_ALLOY`] for more documentation."]
     pub const ALLOY: Self = Self(cef_runtime_style_t::CEF_RUNTIME_STYLE_ALLOY);
+}
+impl RuntimeStyle {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for RuntimeStyle {
     fn default() -> Self {
@@ -42998,6 +45243,12 @@ impl LogSeverity {
     #[doc = "See [`cef_log_severity_t::LOGSEVERITY_DISABLE`] for more documentation."]
     pub const DISABLE: Self = Self(cef_log_severity_t::LOGSEVERITY_DISABLE);
 }
+impl LogSeverity {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for LogSeverity {
     fn default() -> Self {
         Self(cef_log_severity_t::LOGSEVERITY_DEFAULT)
@@ -43041,6 +45292,12 @@ impl LogItems {
     #[doc = "See [`cef_log_items_t::LOG_ITEMS_FLAG_TICK_COUNT`] for more documentation."]
     pub const FLAG_TICK_COUNT: Self = Self(cef_log_items_t::LOG_ITEMS_FLAG_TICK_COUNT);
 }
+impl LogItems {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for LogItems {
     fn default() -> Self {
         Self(cef_log_items_t::LOG_ITEMS_DEFAULT)
@@ -43077,6 +45334,12 @@ impl State {
     pub const ENABLED: Self = Self(cef_state_t::STATE_ENABLED);
     #[doc = "See [`cef_state_t::STATE_DISABLED`] for more documentation."]
     pub const DISABLED: Self = Self(cef_state_t::STATE_DISABLED);
+}
+impl State {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for State {
     fn default() -> Self {
@@ -43115,6 +45378,12 @@ impl ReturnValue {
     #[doc = "See [`cef_return_value_t::RV_CONTINUE_ASYNC`] for more documentation."]
     pub const CONTINUE_ASYNC: Self = Self(cef_return_value_t::RV_CONTINUE_ASYNC);
 }
+impl ReturnValue {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ReturnValue {
     fn default() -> Self {
         Self(cef_return_value_t::RV_CANCEL)
@@ -43151,6 +45420,12 @@ impl CookiePriority {
     pub const MEDIUM: Self = Self(cef_cookie_priority_t::CEF_COOKIE_PRIORITY_MEDIUM);
     #[doc = "See [`cef_cookie_priority_t::CEF_COOKIE_PRIORITY_HIGH`] for more documentation."]
     pub const HIGH: Self = Self(cef_cookie_priority_t::CEF_COOKIE_PRIORITY_HIGH);
+}
+impl CookiePriority {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> i32 {
+        self.0 as i32
+    }
 }
 impl Default for CookiePriority {
     fn default() -> Self {
@@ -43193,6 +45468,12 @@ impl CookieSameSite {
     pub const STRICT_MODE: Self = Self(cef_cookie_same_site_t::CEF_COOKIE_SAME_SITE_STRICT_MODE);
     #[doc = "See [`cef_cookie_same_site_t::CEF_COOKIE_SAME_SITE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_cookie_same_site_t::CEF_COOKIE_SAME_SITE_NUM_VALUES);
+}
+impl CookieSameSite {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for CookieSameSite {
     fn default() -> Self {
@@ -43238,6 +45519,12 @@ impl TerminationStatus {
     pub const INTEGRITY_FAILURE: Self = Self(cef_termination_status_t::TS_INTEGRITY_FAILURE);
     #[doc = "See [`cef_termination_status_t::TS_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_termination_status_t::TS_NUM_VALUES);
+}
+impl TerminationStatus {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for TerminationStatus {
     fn default() -> Self {
@@ -43290,6 +45577,12 @@ impl PathKey {
     #[doc = "See [`cef_path_key_t::PK_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_path_key_t::PK_NUM_VALUES);
 }
+impl PathKey {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for PathKey {
     fn default() -> Self {
         Self(cef_path_key_t::PK_DIR_CURRENT)
@@ -43324,6 +45617,12 @@ impl StorageType {
     pub const LOCALSTORAGE: Self = Self(cef_storage_type_t::ST_LOCALSTORAGE);
     #[doc = "See [`cef_storage_type_t::ST_SESSIONSTORAGE`] for more documentation."]
     pub const SESSIONSTORAGE: Self = Self(cef_storage_type_t::ST_SESSIONSTORAGE);
+}
+impl StorageType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for StorageType {
     fn default() -> Self {
@@ -43940,6 +46239,12 @@ impl Errorcode {
     pub const BLOB_REFERENCED_FILE_UNAVAILABLE: Self =
         Self(cef_errorcode_t::ERR_BLOB_REFERENCED_FILE_UNAVAILABLE);
 }
+impl Errorcode {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> i32 {
+        self.0 as i32
+    }
+}
 impl Default for Errorcode {
     fn default() -> Self {
         Self(cef_errorcode_t::ERR_NONE)
@@ -44013,6 +46318,12 @@ impl CertStatus {
     #[doc = "See [`cef_cert_status_t::CERT_STATUS_CT_COMPLIANCE_FAILED`] for more documentation."]
     pub const CT_COMPLIANCE_FAILED: Self =
         Self(cef_cert_status_t::CERT_STATUS_CT_COMPLIANCE_FAILED);
+}
+impl CertStatus {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for CertStatus {
     fn default() -> Self {
@@ -44126,6 +46437,12 @@ impl Resultcode {
     #[doc = "See [`cef_resultcode_t::CEF_RESULT_CODE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_resultcode_t::CEF_RESULT_CODE_NUM_VALUES);
 }
+impl Resultcode {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for Resultcode {
     fn default() -> Self {
         Self(cef_resultcode_t::CEF_RESULT_CODE_NORMAL_EXIT)
@@ -44185,6 +46502,12 @@ impl WindowOpenDisposition {
         Self(cef_window_open_disposition_t::CEF_WOD_NEW_PICTURE_IN_PICTURE);
     #[doc = "See [`cef_window_open_disposition_t::CEF_WOD_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_window_open_disposition_t::CEF_WOD_NUM_VALUES);
+}
+impl WindowOpenDisposition {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for WindowOpenDisposition {
     fn default() -> Self {
@@ -44266,6 +46589,12 @@ impl TextInputMode {
     #[doc = "See [`cef_text_input_mode_t::CEF_TEXT_INPUT_MODE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_text_input_mode_t::CEF_TEXT_INPUT_MODE_NUM_VALUES);
 }
+impl TextInputMode {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for TextInputMode {
     fn default() -> Self {
         Self(cef_text_input_mode_t::CEF_TEXT_INPUT_MODE_DEFAULT)
@@ -44333,6 +46662,12 @@ impl PostdataelementType {
     pub const FILE: Self = Self(cef_postdataelement_type_t::PDE_TYPE_FILE);
     #[doc = "See [`cef_postdataelement_type_t::PDE_TYPE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_postdataelement_type_t::PDE_TYPE_NUM_VALUES);
+}
+impl PostdataelementType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for PostdataelementType {
     fn default() -> Self {
@@ -44408,6 +46743,12 @@ impl ResourceType {
         Self(cef_resource_type_t::RT_NAVIGATION_PRELOAD_SUB_FRAME);
     #[doc = "See [`cef_resource_type_t::RT_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_resource_type_t::RT_NUM_VALUES);
+}
+impl ResourceType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for ResourceType {
     fn default() -> Self {
@@ -44488,6 +46829,12 @@ impl TransitionType {
     #[doc = "See [`cef_transition_type_t::TT_QUALIFIER_MASK`] for more documentation."]
     pub const QUALIFIER_MASK: Self = Self(cef_transition_type_t::TT_QUALIFIER_MASK);
 }
+impl TransitionType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for TransitionType {
     fn default() -> Self {
         Self(cef_transition_type_t::TT_LINK)
@@ -44560,6 +46907,12 @@ impl UrlrequestStatus {
     #[doc = "See [`cef_urlrequest_status_t::UR_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_urlrequest_status_t::UR_NUM_VALUES);
 }
+impl UrlrequestStatus {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for UrlrequestStatus {
     fn default() -> Self {
         Self(cef_urlrequest_status_t::UR_UNKNOWN)
@@ -44594,6 +46947,12 @@ impl ProcessId {
     pub const BROWSER: Self = Self(cef_process_id_t::PID_BROWSER);
     #[doc = "See [`cef_process_id_t::PID_RENDERER`] for more documentation."]
     pub const RENDERER: Self = Self(cef_process_id_t::PID_RENDERER);
+}
+impl ProcessId {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for ProcessId {
     fn default() -> Self {
@@ -44642,6 +47001,12 @@ impl ThreadId {
     #[doc = "See [`cef_thread_id_t::TID_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_thread_id_t::TID_NUM_VALUES);
 }
+impl ThreadId {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ThreadId {
     fn default() -> Self {
         Self(cef_thread_id_t::TID_UI)
@@ -44683,6 +47048,12 @@ impl ThreadPriority {
     #[doc = "See [`cef_thread_priority_t::TP_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_thread_priority_t::TP_NUM_VALUES);
 }
+impl ThreadPriority {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ThreadPriority {
     fn default() -> Self {
         Self(cef_thread_priority_t::TP_BACKGROUND)
@@ -44722,6 +47093,12 @@ impl MessageLoopType {
     #[doc = "See [`cef_message_loop_type_t::ML_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_message_loop_type_t::ML_NUM_VALUES);
 }
+impl MessageLoopType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for MessageLoopType {
     fn default() -> Self {
         Self(cef_message_loop_type_t::ML_TYPE_DEFAULT)
@@ -44758,6 +47135,12 @@ impl ComInitMode {
     pub const STA: Self = Self(cef_com_init_mode_t::COM_INIT_MODE_STA);
     #[doc = "See [`cef_com_init_mode_t::COM_INIT_MODE_MTA`] for more documentation."]
     pub const MTA: Self = Self(cef_com_init_mode_t::COM_INIT_MODE_MTA);
+}
+impl ComInitMode {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for ComInitMode {
     fn default() -> Self {
@@ -44810,6 +47193,12 @@ impl ValueType {
     #[doc = "See [`cef_value_type_t::VTYPE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_value_type_t::VTYPE_NUM_VALUES);
 }
+impl ValueType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ValueType {
     fn default() -> Self {
         Self(cef_value_type_t::VTYPE_INVALID)
@@ -44848,6 +47237,12 @@ impl JsdialogType {
     pub const PROMPT: Self = Self(cef_jsdialog_type_t::JSDIALOGTYPE_PROMPT);
     #[doc = "See [`cef_jsdialog_type_t::JSDIALOGTYPE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_jsdialog_type_t::JSDIALOGTYPE_NUM_VALUES);
+}
+impl JsdialogType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for JsdialogType {
     fn default() -> Self {
@@ -44934,6 +47329,12 @@ impl MenuId {
     #[doc = "See [`cef_menu_id_t::MENU_ID_USER_LAST`] for more documentation."]
     pub const USER_LAST: Self = Self(cef_menu_id_t::MENU_ID_USER_LAST);
 }
+impl MenuId {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for MenuId {
     fn default() -> Self {
         Self(cef_menu_id_t::MENU_ID_BACK)
@@ -44970,6 +47371,12 @@ impl MouseButtonType {
     pub const MIDDLE: Self = Self(cef_mouse_button_type_t::MBT_MIDDLE);
     #[doc = "See [`cef_mouse_button_type_t::MBT_RIGHT`] for more documentation."]
     pub const RIGHT: Self = Self(cef_mouse_button_type_t::MBT_RIGHT);
+}
+impl MouseButtonType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for MouseButtonType {
     fn default() -> Self {
@@ -45009,6 +47416,12 @@ impl TouchEventType {
     pub const MOVED: Self = Self(cef_touch_event_type_t::CEF_TET_MOVED);
     #[doc = "See [`cef_touch_event_type_t::CEF_TET_CANCELLED`] for more documentation."]
     pub const CANCELLED: Self = Self(cef_touch_event_type_t::CEF_TET_CANCELLED);
+}
+impl TouchEventType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for TouchEventType {
     fn default() -> Self {
@@ -45051,6 +47464,12 @@ impl PointerType {
     #[doc = "See [`cef_pointer_type_t::CEF_POINTER_TYPE_UNKNOWN`] for more documentation."]
     pub const UNKNOWN: Self = Self(cef_pointer_type_t::CEF_POINTER_TYPE_UNKNOWN);
 }
+impl PointerType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for PointerType {
     fn default() -> Self {
         Self(cef_pointer_type_t::CEF_POINTER_TYPE_TOUCH)
@@ -45085,6 +47504,12 @@ impl PaintElementType {
     pub const VIEW: Self = Self(cef_paint_element_type_t::PET_VIEW);
     #[doc = "See [`cef_paint_element_type_t::PET_POPUP`] for more documentation."]
     pub const POPUP: Self = Self(cef_paint_element_type_t::PET_POPUP);
+}
+impl PaintElementType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for PaintElementType {
     fn default() -> Self {
@@ -45157,6 +47582,12 @@ impl MenuItemType {
     pub const SEPARATOR: Self = Self(cef_menu_item_type_t::MENUITEMTYPE_SEPARATOR);
     #[doc = "See [`cef_menu_item_type_t::MENUITEMTYPE_SUBMENU`] for more documentation."]
     pub const SUBMENU: Self = Self(cef_menu_item_type_t::MENUITEMTYPE_SUBMENU);
+}
+impl MenuItemType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for MenuItemType {
     fn default() -> Self {
@@ -45233,6 +47664,12 @@ impl ContextMenuMediaType {
     pub const PLUGIN: Self = Self(cef_context_menu_media_type_t::CM_MEDIATYPE_PLUGIN);
     #[doc = "See [`cef_context_menu_media_type_t::CM_MEDIATYPE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_context_menu_media_type_t::CM_MEDIATYPE_NUM_VALUES);
+}
+impl ContextMenuMediaType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for ContextMenuMediaType {
     fn default() -> Self {
@@ -45360,6 +47797,12 @@ impl KeyEventType {
     #[doc = "See [`cef_key_event_type_t::KEYEVENT_CHAR`] for more documentation."]
     pub const CHAR: Self = Self(cef_key_event_type_t::KEYEVENT_CHAR);
 }
+impl KeyEventType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for KeyEventType {
     fn default() -> Self {
         Self(cef_key_event_type_t::KEYEVENT_RAWKEYDOWN)
@@ -45396,6 +47839,12 @@ impl FocusSource {
     pub const SYSTEM: Self = Self(cef_focus_source_t::FOCUS_SOURCE_SYSTEM);
     #[doc = "See [`cef_focus_source_t::FOCUS_SOURCE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_focus_source_t::FOCUS_SOURCE_NUM_VALUES);
+}
+impl FocusSource {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for FocusSource {
     fn default() -> Self {
@@ -45442,6 +47891,12 @@ impl NavigationType {
     #[doc = "See [`cef_navigation_type_t::NAVIGATION_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_navigation_type_t::NAVIGATION_NUM_VALUES);
 }
+impl NavigationType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for NavigationType {
     fn default() -> Self {
         Self(cef_navigation_type_t::NAVIGATION_LINK_CLICKED)
@@ -45484,6 +47939,12 @@ impl XmlEncodingType {
     pub const ASCII: Self = Self(cef_xml_encoding_type_t::XML_ENCODING_ASCII);
     #[doc = "See [`cef_xml_encoding_type_t::XML_ENCODING_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_xml_encoding_type_t::XML_ENCODING_NUM_VALUES);
+}
+impl XmlEncodingType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for XmlEncodingType {
     fn default() -> Self {
@@ -45541,6 +48002,12 @@ impl XmlNodeType {
     #[doc = "See [`cef_xml_node_type_t::XML_NODE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_xml_node_type_t::XML_NODE_NUM_VALUES);
 }
+impl XmlNodeType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for XmlNodeType {
     fn default() -> Self {
         Self(cef_xml_node_type_t::XML_NODE_UNSUPPORTED)
@@ -45581,6 +48048,12 @@ impl DomDocumentType {
     pub const PLUGIN: Self = Self(cef_dom_document_type_t::DOM_DOCUMENT_TYPE_PLUGIN);
     #[doc = "See [`cef_dom_document_type_t::DOM_DOCUMENT_TYPE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_dom_document_type_t::DOM_DOCUMENT_TYPE_NUM_VALUES);
+}
+impl DomDocumentType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for DomDocumentType {
     fn default() -> Self {
@@ -45650,6 +48123,12 @@ impl DomEventCategory {
     pub const XMLHTTPREQUEST_PROGRESS: Self =
         Self(cef_dom_event_category_t::DOM_EVENT_CATEGORY_XMLHTTPREQUEST_PROGRESS);
 }
+impl DomEventCategory {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for DomEventCategory {
     fn default() -> Self {
         Self(cef_dom_event_category_t::DOM_EVENT_CATEGORY_UNKNOWN)
@@ -45690,6 +48169,12 @@ impl DomEventPhase {
     pub const BUBBLING: Self = Self(cef_dom_event_phase_t::DOM_EVENT_PHASE_BUBBLING);
     #[doc = "See [`cef_dom_event_phase_t::DOM_EVENT_PHASE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_dom_event_phase_t::DOM_EVENT_PHASE_NUM_VALUES);
+}
+impl DomEventPhase {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for DomEventPhase {
     fn default() -> Self {
@@ -45744,6 +48229,12 @@ impl DomNodeType {
     pub const DOCUMENT_FRAGMENT: Self = Self(cef_dom_node_type_t::DOM_NODE_TYPE_DOCUMENT_FRAGMENT);
     #[doc = "See [`cef_dom_node_type_t::DOM_NODE_TYPE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_dom_node_type_t::DOM_NODE_TYPE_NUM_VALUES);
+}
+impl DomNodeType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for DomNodeType {
     fn default() -> Self {
@@ -45871,6 +48362,12 @@ impl DomFormControlType {
     pub const NUM_VALUES: Self =
         Self(cef_dom_form_control_type_t::DOM_FORM_CONTROL_TYPE_NUM_VALUES);
 }
+impl DomFormControlType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for DomFormControlType {
     fn default() -> Self {
         Self(cef_dom_form_control_type_t::DOM_FORM_CONTROL_TYPE_UNSUPPORTED)
@@ -45911,6 +48408,12 @@ impl FileDialogMode {
     pub const SAVE: Self = Self(cef_file_dialog_mode_t::FILE_DIALOG_SAVE);
     #[doc = "See [`cef_file_dialog_mode_t::FILE_DIALOG_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_file_dialog_mode_t::FILE_DIALOG_NUM_VALUES);
+}
+impl FileDialogMode {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for FileDialogMode {
     fn default() -> Self {
@@ -45992,6 +48495,12 @@ impl ColorModel {
     #[doc = "See [`cef_color_model_t::COLOR_MODEL_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_color_model_t::COLOR_MODEL_NUM_VALUES);
 }
+impl ColorModel {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ColorModel {
     fn default() -> Self {
         Self(cef_color_model_t::COLOR_MODEL_UNKNOWN)
@@ -46032,6 +48541,12 @@ impl DuplexMode {
     pub const SHORT_EDGE: Self = Self(cef_duplex_mode_t::DUPLEX_MODE_SHORT_EDGE);
     #[doc = "See [`cef_duplex_mode_t::DUPLEX_MODE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_duplex_mode_t::DUPLEX_MODE_NUM_VALUES);
+}
+impl DuplexMode {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> i32 {
+        self.0 as i32
+    }
 }
 impl Default for DuplexMode {
     fn default() -> Self {
@@ -46167,6 +48682,12 @@ impl CursorType {
     #[doc = "See [`cef_cursor_type_t::CT_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_cursor_type_t::CT_NUM_VALUES);
 }
+impl CursorType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for CursorType {
     fn default() -> Self {
         Self(cef_cursor_type_t::CT_POINTER)
@@ -46212,6 +48733,12 @@ impl UriUnescapeRule {
     pub const REPLACE_PLUS_WITH_SPACE: Self =
         Self(cef_uri_unescape_rule_t::UU_REPLACE_PLUS_WITH_SPACE);
 }
+impl UriUnescapeRule {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for UriUnescapeRule {
     fn default() -> Self {
         Self(cef_uri_unescape_rule_t::UU_NONE)
@@ -46247,6 +48774,12 @@ impl JsonParserOptions {
     #[doc = "See [`cef_json_parser_options_t::JSON_PARSER_ALLOW_TRAILING_COMMAS`] for more documentation."]
     pub const ALLOW_TRAILING_COMMAS: Self =
         Self(cef_json_parser_options_t::JSON_PARSER_ALLOW_TRAILING_COMMAS);
+}
+impl JsonParserOptions {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for JsonParserOptions {
     fn default() -> Self {
@@ -46289,6 +48822,12 @@ impl JsonWriterOptions {
     #[doc = "See [`cef_json_writer_options_t::JSON_WRITER_PRETTY_PRINT`] for more documentation."]
     pub const PRETTY_PRINT: Self = Self(cef_json_writer_options_t::JSON_WRITER_PRETTY_PRINT);
 }
+impl JsonWriterOptions {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for JsonWriterOptions {
     fn default() -> Self {
         Self(cef_json_writer_options_t::JSON_WRITER_DEFAULT)
@@ -46325,6 +48864,12 @@ impl PdfPrintMarginType {
     pub const NONE: Self = Self(cef_pdf_print_margin_type_t::PDF_PRINT_MARGIN_NONE);
     #[doc = "See [`cef_pdf_print_margin_type_t::PDF_PRINT_MARGIN_CUSTOM`] for more documentation."]
     pub const CUSTOM: Self = Self(cef_pdf_print_margin_type_t::PDF_PRINT_MARGIN_CUSTOM);
+}
+impl PdfPrintMarginType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for PdfPrintMarginType {
     fn default() -> Self {
@@ -46378,6 +48923,12 @@ impl ScaleFactor {
     pub const FACTOR_300P: Self = Self(cef_scale_factor_t::SCALE_FACTOR_300P);
     #[doc = "See [`cef_scale_factor_t::SCALE_FACTOR_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_scale_factor_t::SCALE_FACTOR_NUM_VALUES);
+}
+impl ScaleFactor {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for ScaleFactor {
     fn default() -> Self {
@@ -46435,6 +48986,12 @@ impl ReferrerPolicy {
     #[doc = "See [`cef_referrer_policy_t::REFERRER_POLICY_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_referrer_policy_t::REFERRER_POLICY_NUM_VALUES);
 }
+impl ReferrerPolicy {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ReferrerPolicy {
     fn default() -> Self {
         Self (cef_referrer_policy_t :: REFERRER_POLICY_CLEAR_REFERRER_ON_TRANSITION_FROM_SECURE_TO_INSECURE)
@@ -46473,6 +49030,12 @@ impl ResponseFilterStatus {
     #[doc = "See [`cef_response_filter_status_t::RESPONSE_FILTER_ERROR`] for more documentation."]
     pub const ERROR: Self = Self(cef_response_filter_status_t::RESPONSE_FILTER_ERROR);
 }
+impl ResponseFilterStatus {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ResponseFilterStatus {
     fn default() -> Self {
         Self(cef_response_filter_status_t::RESPONSE_FILTER_NEED_MORE_DATA)
@@ -46509,6 +49072,12 @@ impl AlphaType {
     pub const PREMULTIPLIED: Self = Self(cef_alpha_type_t::CEF_ALPHA_TYPE_PREMULTIPLIED);
     #[doc = "See [`cef_alpha_type_t::CEF_ALPHA_TYPE_POSTMULTIPLIED`] for more documentation."]
     pub const POSTMULTIPLIED: Self = Self(cef_alpha_type_t::CEF_ALPHA_TYPE_POSTMULTIPLIED);
+}
+impl AlphaType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for AlphaType {
     fn default() -> Self {
@@ -46553,6 +49122,12 @@ impl TextStyle {
     #[doc = "See [`cef_text_style_t::CEF_TEXT_STYLE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_text_style_t::CEF_TEXT_STYLE_NUM_VALUES);
 }
+impl TextStyle {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for TextStyle {
     fn default() -> Self {
         Self(cef_text_style_t::CEF_TEXT_STYLE_BOLD)
@@ -46593,6 +49168,12 @@ impl AxisAlignment {
     pub const STRETCH: Self = Self(cef_axis_alignment_t::CEF_AXIS_ALIGNMENT_STRETCH);
     #[doc = "See [`cef_axis_alignment_t::CEF_AXIS_ALIGNMENT_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_axis_alignment_t::CEF_AXIS_ALIGNMENT_NUM_VALUES);
+}
+impl AxisAlignment {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for AxisAlignment {
     fn default() -> Self {
@@ -46635,6 +49216,12 @@ impl ButtonState {
     #[doc = "See [`cef_button_state_t::CEF_BUTTON_STATE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_button_state_t::CEF_BUTTON_STATE_NUM_VALUES);
 }
+impl ButtonState {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ButtonState {
     fn default() -> Self {
         Self(cef_button_state_t::CEF_BUTTON_STATE_NORMAL)
@@ -46671,6 +49258,12 @@ impl HorizontalAlignment {
     pub const CENTER: Self = Self(cef_horizontal_alignment_t::CEF_HORIZONTAL_ALIGNMENT_CENTER);
     #[doc = "See [`cef_horizontal_alignment_t::CEF_HORIZONTAL_ALIGNMENT_RIGHT`] for more documentation."]
     pub const RIGHT: Self = Self(cef_horizontal_alignment_t::CEF_HORIZONTAL_ALIGNMENT_RIGHT);
+}
+impl HorizontalAlignment {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for HorizontalAlignment {
     fn default() -> Self {
@@ -46710,6 +49303,12 @@ impl MenuAnchorPosition {
     pub const BOTTOMCENTER: Self = Self(cef_menu_anchor_position_t::CEF_MENU_ANCHOR_BOTTOMCENTER);
     #[doc = "See [`cef_menu_anchor_position_t::CEF_MENU_ANCHOR_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_menu_anchor_position_t::CEF_MENU_ANCHOR_NUM_VALUES);
+}
+impl MenuAnchorPosition {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for MenuAnchorPosition {
     fn default() -> Self {
@@ -46757,6 +49356,12 @@ impl MenuColorType {
         Self(cef_menu_color_type_t::CEF_MENU_COLOR_BACKGROUND_HOVERED);
     #[doc = "See [`cef_menu_color_type_t::CEF_MENU_COLOR_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_menu_color_type_t::CEF_MENU_COLOR_NUM_VALUES);
+}
+impl MenuColorType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for MenuColorType {
     fn default() -> Self {
@@ -46807,6 +49412,12 @@ impl SslVersion {
     #[doc = "See [`cef_ssl_version_t::SSL_CONNECTION_VERSION_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_ssl_version_t::SSL_CONNECTION_VERSION_NUM_VALUES);
 }
+impl SslVersion {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for SslVersion {
     fn default() -> Self {
         Self(cef_ssl_version_t::SSL_CONNECTION_VERSION_UNKNOWN)
@@ -46845,6 +49456,12 @@ impl SslContentStatus {
     #[doc = "See [`cef_ssl_content_status_t::SSL_CONTENT_RAN_INSECURE_CONTENT`] for more documentation."]
     pub const RAN_INSECURE_CONTENT: Self =
         Self(cef_ssl_content_status_t::SSL_CONTENT_RAN_INSECURE_CONTENT);
+}
+impl SslContentStatus {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for SslContentStatus {
     fn default() -> Self {
@@ -46894,6 +49511,12 @@ impl SchemeOptions {
     #[doc = "See [`cef_scheme_options_t::CEF_SCHEME_OPTION_FETCH_ENABLED`] for more documentation."]
     pub const FETCH_ENABLED: Self = Self(cef_scheme_options_t::CEF_SCHEME_OPTION_FETCH_ENABLED);
 }
+impl SchemeOptions {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for SchemeOptions {
     fn default() -> Self {
         Self(cef_scheme_options_t::CEF_SCHEME_OPTION_NONE)
@@ -46934,6 +49557,12 @@ impl CompositionUnderlineStyle {
     pub const NONE: Self = Self(cef_composition_underline_style_t::CEF_CUS_NONE);
     #[doc = "See [`cef_composition_underline_style_t::CEF_CUS_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_composition_underline_style_t::CEF_CUS_NUM_VALUES);
+}
+impl CompositionUnderlineStyle {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for CompositionUnderlineStyle {
     fn default() -> Self {
@@ -47045,6 +49674,12 @@ impl ChannelLayout {
     #[doc = "See [`cef_channel_layout_t::CEF_CHANNEL_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_channel_layout_t::CEF_CHANNEL_NUM_VALUES);
 }
+impl ChannelLayout {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ChannelLayout {
     fn default() -> Self {
         Self(cef_channel_layout_t::CEF_CHANNEL_LAYOUT_NONE)
@@ -47117,6 +49752,12 @@ impl MediaRouteCreateResult {
     #[doc = "See [`cef_media_route_create_result_t::CEF_MRCR_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_media_route_create_result_t::CEF_MRCR_NUM_VALUES);
 }
+impl MediaRouteCreateResult {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for MediaRouteCreateResult {
     fn default() -> Self {
         Self(cef_media_route_create_result_t::CEF_MRCR_UNKNOWN_ERROR)
@@ -47159,6 +49800,12 @@ impl MediaRouteConnectionState {
     pub const TERMINATED: Self = Self(cef_media_route_connection_state_t::CEF_MRCS_TERMINATED);
     #[doc = "See [`cef_media_route_connection_state_t::CEF_MRCS_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_media_route_connection_state_t::CEF_MRCS_NUM_VALUES);
+}
+impl MediaRouteConnectionState {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> i32 {
+        self.0 as i32
+    }
 }
 impl Default for MediaRouteConnectionState {
     fn default() -> Self {
@@ -47209,6 +49856,12 @@ impl MediaSinkIconType {
     #[doc = "See [`cef_media_sink_icon_type_t::CEF_MSIT_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_media_sink_icon_type_t::CEF_MSIT_NUM_VALUES);
 }
+impl MediaSinkIconType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for MediaSinkIconType {
     fn default() -> Self {
         Self(cef_media_sink_icon_type_t::CEF_MSIT_CAST)
@@ -47258,6 +49911,12 @@ impl TextFieldCommands {
     #[doc = "See [`cef_text_field_commands_t::CEF_TFC_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_text_field_commands_t::CEF_TFC_NUM_VALUES);
 }
+impl TextFieldCommands {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for TextFieldCommands {
     fn default() -> Self {
         Self(cef_text_field_commands_t::CEF_TFC_UNKNOWN)
@@ -47298,6 +49957,12 @@ impl ChromeToolbarType {
     pub const LOCATION: Self = Self(cef_chrome_toolbar_type_t::CEF_CTT_LOCATION);
     #[doc = "See [`cef_chrome_toolbar_type_t::CEF_CTT_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_chrome_toolbar_type_t::CEF_CTT_NUM_VALUES);
+}
+impl ChromeToolbarType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for ChromeToolbarType {
     fn default() -> Self {
@@ -47429,6 +50094,12 @@ impl ChromePageActionIconType {
     #[doc = "See [`cef_chrome_page_action_icon_type_t::CEF_CPAIT_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_chrome_page_action_icon_type_t::CEF_CPAIT_NUM_VALUES);
 }
+impl ChromePageActionIconType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ChromePageActionIconType {
     fn default() -> Self {
         Self(cef_chrome_page_action_icon_type_t::CEF_CPAIT_BOOKMARK_STAR)
@@ -47482,6 +50153,12 @@ impl ChromeToolbarButtonType {
     #[doc = "See [`cef_chrome_toolbar_button_type_t::CEF_CTBT_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_chrome_toolbar_button_type_t::CEF_CTBT_NUM_VALUES);
 }
+impl ChromeToolbarButtonType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for ChromeToolbarButtonType {
     fn default() -> Self {
         Self(cef_chrome_toolbar_button_type_t::CEF_CTBT_CAST_DEPRECATED)
@@ -47525,6 +50202,12 @@ impl DockingMode {
     #[doc = "See [`cef_docking_mode_t::CEF_DOCKING_MODE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_docking_mode_t::CEF_DOCKING_MODE_NUM_VALUES);
 }
+impl DockingMode {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for DockingMode {
     fn default() -> Self {
         Self(cef_docking_mode_t::CEF_DOCKING_MODE_TOP_LEFT)
@@ -47567,6 +50250,12 @@ impl ShowState {
     pub const HIDDEN: Self = Self(cef_show_state_t::CEF_SHOW_STATE_HIDDEN);
     #[doc = "See [`cef_show_state_t::CEF_SHOW_STATE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_show_state_t::CEF_SHOW_STATE_NUM_VALUES);
+}
+impl ShowState {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for ShowState {
     fn default() -> Self {
@@ -47641,6 +50330,12 @@ impl MediaAccessPermissionTypes {
     #[doc = "See [`cef_media_access_permission_types_t::CEF_MEDIA_PERMISSION_DESKTOP_VIDEO_CAPTURE`] for more documentation."]
     pub const DESKTOP_VIDEO_CAPTURE: Self =
         Self(cef_media_access_permission_types_t::CEF_MEDIA_PERMISSION_DESKTOP_VIDEO_CAPTURE);
+}
+impl MediaAccessPermissionTypes {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for MediaAccessPermissionTypes {
     fn default() -> Self {
@@ -47752,6 +50447,12 @@ impl PermissionRequestTypes {
     pub const LOCAL_NETWORK_ACCESS: Self =
         Self(cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOCAL_NETWORK_ACCESS);
 }
+impl PermissionRequestTypes {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for PermissionRequestTypes {
     fn default() -> Self {
         Self(cef_permission_request_types_t::CEF_PERMISSION_TYPE_NONE)
@@ -47794,6 +50495,12 @@ impl PermissionRequestResult {
     pub const NUM_VALUES: Self =
         Self(cef_permission_request_result_t::CEF_PERMISSION_RESULT_NUM_VALUES);
 }
+impl PermissionRequestResult {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for PermissionRequestResult {
     fn default() -> Self {
         Self(cef_permission_request_result_t::CEF_PERMISSION_RESULT_ACCEPT)
@@ -47833,6 +50540,12 @@ impl TestCertType {
     #[doc = "See [`cef_test_cert_type_t::CEF_TEST_CERT_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_test_cert_type_t::CEF_TEST_CERT_NUM_VALUES);
 }
+impl TestCertType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for TestCertType {
     fn default() -> Self {
         Self(cef_test_cert_type_t::CEF_TEST_CERT_OK_IP)
@@ -47870,6 +50583,12 @@ impl PreferencesType {
         Self(cef_preferences_type_t::CEF_PREFERENCES_TYPE_REQUEST_CONTEXT);
     #[doc = "See [`cef_preferences_type_t::CEF_PREFERENCES_TYPE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_preferences_type_t::CEF_PREFERENCES_TYPE_NUM_VALUES);
+}
+impl PreferencesType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for PreferencesType {
     fn default() -> Self {
@@ -47994,6 +50713,12 @@ impl DownloadInterruptReason {
     pub const CRASH: Self =
         Self(cef_download_interrupt_reason_t::CEF_DOWNLOAD_INTERRUPT_REASON_CRASH);
 }
+impl DownloadInterruptReason {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
+}
 impl Default for DownloadInterruptReason {
     fn default() -> Self {
         Self(cef_download_interrupt_reason_t::CEF_DOWNLOAD_INTERRUPT_REASON_NONE)
@@ -48028,6 +50753,12 @@ impl GestureCommand {
     pub const BACK: Self = Self(cef_gesture_command_t::CEF_GESTURE_COMMAND_BACK);
     #[doc = "See [`cef_gesture_command_t::CEF_GESTURE_COMMAND_FORWARD`] for more documentation."]
     pub const FORWARD: Self = Self(cef_gesture_command_t::CEF_GESTURE_COMMAND_FORWARD);
+}
+impl GestureCommand {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for GestureCommand {
     fn default() -> Self {
@@ -48065,6 +50796,12 @@ impl ZoomCommand {
     pub const RESET: Self = Self(cef_zoom_command_t::CEF_ZOOM_COMMAND_RESET);
     #[doc = "See [`cef_zoom_command_t::CEF_ZOOM_COMMAND_IN`] for more documentation."]
     pub const IN: Self = Self(cef_zoom_command_t::CEF_ZOOM_COMMAND_IN);
+}
+impl ZoomCommand {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for ZoomCommand {
     fn default() -> Self {
@@ -48112,6 +50849,12 @@ impl ColorVariant {
     pub const EXPRESSIVE: Self = Self(cef_color_variant_t::CEF_COLOR_VARIANT_EXPRESSIVE);
     #[doc = "See [`cef_color_variant_t::CEF_COLOR_VARIANT_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_color_variant_t::CEF_COLOR_VARIANT_NUM_VALUES);
+}
+impl ColorVariant {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for ColorVariant {
     fn default() -> Self {
@@ -48171,6 +50914,12 @@ impl TaskType {
     pub const SERVICE_WORKER: Self = Self(cef_task_type_t::CEF_TASK_TYPE_SERVICE_WORKER);
     #[doc = "See [`cef_task_type_t::CEF_TASK_TYPE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_task_type_t::CEF_TASK_TYPE_NUM_VALUES);
+}
+impl TaskType {
+    #[doc = "Get the raw integer representation."]
+    pub fn get_raw(&self) -> u32 {
+        self.0 as u32
+    }
 }
 impl Default for TaskType {
     fn default() -> Self {
@@ -50316,6 +53065,690 @@ pub fn set_nestable_tasks_allowed(allowed: ::std::os::raw::c_int) {
     }
 }
 
+/// See [`cef_crash_reporting_enabled`] for more documentation.
+pub fn crash_reporting_enabled() -> ::std::os::raw::c_int {
+    unsafe {
+        let result = cef_crash_reporting_enabled();
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_set_crash_key_value`] for more documentation.
+pub fn set_crash_key_value(key: Option<&CefString>, value: Option<&CefString>) {
+    unsafe {
+        let (arg_key, arg_value) = (key, value);
+        let arg_key = arg_key
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_value = arg_value
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        cef_set_crash_key_value(arg_key, arg_value);
+    }
+}
+
+/// See [`cef_create_directory`] for more documentation.
+pub fn create_directory(full_path: Option<&CefString>) -> ::std::os::raw::c_int {
+    unsafe {
+        let arg_full_path = full_path;
+        let arg_full_path = arg_full_path
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let result = cef_create_directory(arg_full_path);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_get_temp_directory`] for more documentation.
+pub fn get_temp_directory(temp_dir: Option<&mut CefString>) -> ::std::os::raw::c_int {
+    unsafe {
+        let arg_temp_dir = temp_dir;
+        let arg_temp_dir = arg_temp_dir
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null_mut());
+        let result = cef_get_temp_directory(arg_temp_dir);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_create_new_temp_directory`] for more documentation.
+pub fn create_new_temp_directory(
+    prefix: Option<&CefString>,
+    new_temp_path: Option<&mut CefString>,
+) -> ::std::os::raw::c_int {
+    unsafe {
+        let (arg_prefix, arg_new_temp_path) = (prefix, new_temp_path);
+        let arg_prefix = arg_prefix
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_new_temp_path = arg_new_temp_path
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null_mut());
+        let result = cef_create_new_temp_directory(arg_prefix, arg_new_temp_path);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_create_temp_directory_in_directory`] for more documentation.
+pub fn create_temp_directory_in_directory(
+    base_dir: Option<&CefString>,
+    prefix: Option<&CefString>,
+    new_dir: Option<&mut CefString>,
+) -> ::std::os::raw::c_int {
+    unsafe {
+        let (arg_base_dir, arg_prefix, arg_new_dir) = (base_dir, prefix, new_dir);
+        let arg_base_dir = arg_base_dir
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_prefix = arg_prefix
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_new_dir = arg_new_dir
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null_mut());
+        let result = cef_create_temp_directory_in_directory(arg_base_dir, arg_prefix, arg_new_dir);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_directory_exists`] for more documentation.
+pub fn directory_exists(path: Option<&CefString>) -> ::std::os::raw::c_int {
+    unsafe {
+        let arg_path = path;
+        let arg_path = arg_path
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let result = cef_directory_exists(arg_path);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_delete_file`] for more documentation.
+pub fn delete_file(
+    path: Option<&CefString>,
+    recursive: ::std::os::raw::c_int,
+) -> ::std::os::raw::c_int {
+    unsafe {
+        let (arg_path, arg_recursive) = (path, recursive);
+        let arg_path = arg_path
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let result = cef_delete_file(arg_path, arg_recursive);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_zip_directory`] for more documentation.
+pub fn zip_directory(
+    src_dir: Option<&CefString>,
+    dest_file: Option<&CefString>,
+    include_hidden_files: ::std::os::raw::c_int,
+) -> ::std::os::raw::c_int {
+    unsafe {
+        let (arg_src_dir, arg_dest_file, arg_include_hidden_files) =
+            (src_dir, dest_file, include_hidden_files);
+        let arg_src_dir = arg_src_dir
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_dest_file = arg_dest_file
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let result = cef_zip_directory(arg_src_dir, arg_dest_file, arg_include_hidden_files);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_load_crlsets_file`] for more documentation.
+pub fn load_crlsets_file(path: Option<&CefString>) {
+    unsafe {
+        let arg_path = path;
+        let arg_path = arg_path
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        cef_load_crlsets_file(arg_path);
+    }
+}
+
+/// See [`cef_is_rtl`] for more documentation.
+pub fn is_rtl() -> ::std::os::raw::c_int {
+    unsafe {
+        let result = cef_is_rtl();
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_add_cross_origin_whitelist_entry`] for more documentation.
+pub fn add_cross_origin_whitelist_entry(
+    source_origin: Option<&CefString>,
+    target_protocol: Option<&CefString>,
+    target_domain: Option<&CefString>,
+    allow_target_subdomains: ::std::os::raw::c_int,
+) -> ::std::os::raw::c_int {
+    unsafe {
+        let (
+            arg_source_origin,
+            arg_target_protocol,
+            arg_target_domain,
+            arg_allow_target_subdomains,
+        ) = (
+            source_origin,
+            target_protocol,
+            target_domain,
+            allow_target_subdomains,
+        );
+        let arg_source_origin = arg_source_origin
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_target_protocol = arg_target_protocol
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_target_domain = arg_target_domain
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let result = cef_add_cross_origin_whitelist_entry(
+            arg_source_origin,
+            arg_target_protocol,
+            arg_target_domain,
+            arg_allow_target_subdomains,
+        );
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_remove_cross_origin_whitelist_entry`] for more documentation.
+pub fn remove_cross_origin_whitelist_entry(
+    source_origin: Option<&CefString>,
+    target_protocol: Option<&CefString>,
+    target_domain: Option<&CefString>,
+    allow_target_subdomains: ::std::os::raw::c_int,
+) -> ::std::os::raw::c_int {
+    unsafe {
+        let (
+            arg_source_origin,
+            arg_target_protocol,
+            arg_target_domain,
+            arg_allow_target_subdomains,
+        ) = (
+            source_origin,
+            target_protocol,
+            target_domain,
+            allow_target_subdomains,
+        );
+        let arg_source_origin = arg_source_origin
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_target_protocol = arg_target_protocol
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_target_domain = arg_target_domain
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let result = cef_remove_cross_origin_whitelist_entry(
+            arg_source_origin,
+            arg_target_protocol,
+            arg_target_domain,
+            arg_allow_target_subdomains,
+        );
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_clear_cross_origin_whitelist`] for more documentation.
+pub fn clear_cross_origin_whitelist() -> ::std::os::raw::c_int {
+    unsafe {
+        let result = cef_clear_cross_origin_whitelist();
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_resolve_url`] for more documentation.
+pub fn resolve_url(
+    base_url: Option<&CefString>,
+    relative_url: Option<&CefString>,
+    resolved_url: Option<&mut CefString>,
+) -> ::std::os::raw::c_int {
+    unsafe {
+        let (arg_base_url, arg_relative_url, arg_resolved_url) =
+            (base_url, relative_url, resolved_url);
+        let arg_base_url = arg_base_url
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_relative_url = arg_relative_url
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_resolved_url = arg_resolved_url
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null_mut());
+        let result = cef_resolve_url(arg_base_url, arg_relative_url, arg_resolved_url);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_parse_url`] for more documentation.
+pub fn parse_url(url: Option<&CefString>, parts: Option<&mut Urlparts>) -> ::std::os::raw::c_int {
+    unsafe {
+        let (arg_url, arg_parts) = (url, parts);
+        let arg_url = arg_url
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let mut arg_parts = arg_parts.cloned().map(|arg| arg.into());
+        let arg_parts = arg_parts
+            .as_mut()
+            .map(std::ptr::from_mut)
+            .unwrap_or(std::ptr::null_mut());
+        let result = cef_parse_url(arg_url, arg_parts);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_create_url`] for more documentation.
+pub fn create_url(parts: Option<&Urlparts>, url: Option<&mut CefString>) -> ::std::os::raw::c_int {
+    unsafe {
+        let (arg_parts, arg_url) = (parts, url);
+        let arg_parts = arg_parts.cloned().map(|arg| arg.into());
+        let arg_parts = arg_parts
+            .as_ref()
+            .map(std::ptr::from_ref)
+            .unwrap_or(std::ptr::null());
+        let arg_url = arg_url
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null_mut());
+        let result = cef_create_url(arg_parts, arg_url);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_format_url_for_security_display`] for more documentation.
+pub fn format_url_for_security_display(origin_url: Option<&CefString>) -> CefStringUserfree {
+    unsafe {
+        let arg_origin_url = origin_url;
+        let arg_origin_url = arg_origin_url
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let result = cef_format_url_for_security_display(arg_origin_url);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_get_mime_type`] for more documentation.
+pub fn get_mime_type(extension: Option<&CefString>) -> CefStringUserfree {
+    unsafe {
+        let arg_extension = extension;
+        let arg_extension = arg_extension
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let result = cef_get_mime_type(arg_extension);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_get_extensions_for_mime_type`] for more documentation.
+pub fn get_extensions_for_mime_type(
+    mime_type: Option<&CefString>,
+    extensions: Option<&mut CefStringList>,
+) {
+    unsafe {
+        let (arg_mime_type, arg_extensions) = (mime_type, extensions);
+        let arg_mime_type = arg_mime_type
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_extensions = arg_extensions
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null_mut());
+        cef_get_extensions_for_mime_type(arg_mime_type, arg_extensions);
+    }
+}
+
+/// See [`cef_base64_encode`] for more documentation.
+pub fn base64_encode(data: Option<&[u8]>) -> CefStringUserfree {
+    unsafe {
+        let arg_data = data;
+        let arg_data_size = arg_data.as_ref().map(|arg| arg.len()).unwrap_or_default();
+        let arg_data = arg_data
+            .and_then(|arg| {
+                if arg.is_empty() {
+                    None
+                } else {
+                    Some(arg.as_ptr().cast())
+                }
+            })
+            .unwrap_or(std::ptr::null());
+        let result = cef_base64_encode(arg_data, arg_data_size);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_base64_decode`] for more documentation.
+pub fn base64_decode(data: Option<&CefString>) -> Option<BinaryValue> {
+    unsafe {
+        let arg_data = data;
+        let arg_data = arg_data
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let result = cef_base64_decode(arg_data);
+        if result.is_null() {
+            None
+        } else {
+            Some(result.wrap_result())
+        }
+    }
+}
+
+/// See [`cef_uriencode`] for more documentation.
+pub fn uriencode(text: Option<&CefString>, use_plus: ::std::os::raw::c_int) -> CefStringUserfree {
+    unsafe {
+        let (arg_text, arg_use_plus) = (text, use_plus);
+        let arg_text = arg_text
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let result = cef_uriencode(arg_text, arg_use_plus);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_uridecode`] for more documentation.
+pub fn uridecode(
+    text: Option<&CefString>,
+    convert_to_utf_8: ::std::os::raw::c_int,
+    unescape_rule: UriUnescapeRule,
+) -> CefStringUserfree {
+    unsafe {
+        let (arg_text, arg_convert_to_utf_8, arg_unescape_rule) =
+            (text, convert_to_utf_8, unescape_rule);
+        let arg_text = arg_text
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_unescape_rule = arg_unescape_rule.into_raw();
+        let result = cef_uridecode(arg_text, arg_convert_to_utf_8, arg_unescape_rule);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_parse_json`] for more documentation.
+pub fn parse_json(json_string: Option<&CefString>, options: JsonParserOptions) -> Option<Value> {
+    unsafe {
+        let (arg_json_string, arg_options) = (json_string, options);
+        let arg_json_string = arg_json_string
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_options = arg_options.into_raw();
+        let result = cef_parse_json(arg_json_string, arg_options);
+        if result.is_null() {
+            None
+        } else {
+            Some(result.wrap_result())
+        }
+    }
+}
+
+/// See [`cef_parse_json_buffer`] for more documentation.
+pub fn parse_json_buffer(json: Option<&[u8]>, options: JsonParserOptions) -> Option<Value> {
+    unsafe {
+        let (arg_json, arg_options) = (json, options);
+        let arg_json_size = arg_json.as_ref().map(|arg| arg.len()).unwrap_or_default();
+        let arg_json = arg_json
+            .and_then(|arg| {
+                if arg.is_empty() {
+                    None
+                } else {
+                    Some(arg.as_ptr().cast())
+                }
+            })
+            .unwrap_or(std::ptr::null());
+        let arg_options = arg_options.into_raw();
+        let result = cef_parse_json_buffer(arg_json, arg_json_size, arg_options);
+        if result.is_null() {
+            None
+        } else {
+            Some(result.wrap_result())
+        }
+    }
+}
+
+/// See [`cef_parse_jsonand_return_error`] for more documentation.
+pub fn parse_jsonand_return_error(
+    json_string: Option<&CefString>,
+    options: JsonParserOptions,
+    error_msg_out: Option<&mut CefString>,
+) -> Option<Value> {
+    unsafe {
+        let (arg_json_string, arg_options, arg_error_msg_out) =
+            (json_string, options, error_msg_out);
+        let arg_json_string = arg_json_string
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_options = arg_options.into_raw();
+        let arg_error_msg_out = arg_error_msg_out
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null_mut());
+        let result =
+            cef_parse_jsonand_return_error(arg_json_string, arg_options, arg_error_msg_out);
+        if result.is_null() {
+            None
+        } else {
+            Some(result.wrap_result())
+        }
+    }
+}
+
+/// See [`cef_write_json`] for more documentation.
+pub fn write_json(node: Option<&mut Value>, options: JsonWriterOptions) -> CefStringUserfree {
+    unsafe {
+        let (arg_node, arg_options) = (node, options);
+        let arg_node = arg_node
+            .map(|arg| {
+                arg.add_ref();
+                ImplValue::get_raw(arg)
+            })
+            .unwrap_or(std::ptr::null_mut());
+        let arg_options = arg_options.into_raw();
+        let result = cef_write_json(arg_node, arg_options);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_get_path`] for more documentation.
+pub fn get_path(key: PathKey, path: Option<&mut CefString>) -> ::std::os::raw::c_int {
+    unsafe {
+        let (arg_key, arg_path) = (key, path);
+        let arg_key = arg_key.into_raw();
+        let arg_path = arg_path
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null_mut());
+        let result = cef_get_path(arg_key, arg_path);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_launch_process`] for more documentation.
+pub fn launch_process(command_line: Option<&mut CommandLine>) -> ::std::os::raw::c_int {
+    unsafe {
+        let arg_command_line = command_line;
+        let arg_command_line = arg_command_line
+            .map(|arg| {
+                arg.add_ref();
+                ImplCommandLine::get_raw(arg)
+            })
+            .unwrap_or(std::ptr::null_mut());
+        let result = cef_launch_process(arg_command_line);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_resource_bundle_get_global`] for more documentation.
+pub fn resource_bundle_get_global() -> Option<ResourceBundle> {
+    unsafe {
+        let result = cef_resource_bundle_get_global();
+        if result.is_null() {
+            None
+        } else {
+            Some(result.wrap_result())
+        }
+    }
+}
+
+/// See [`cef_server_create`] for more documentation.
+pub fn server_create(
+    address: Option<&CefString>,
+    port: u16,
+    backlog: ::std::os::raw::c_int,
+    handler: Option<&mut ServerHandler>,
+) {
+    unsafe {
+        let (arg_address, arg_port, arg_backlog, arg_handler) = (address, port, backlog, handler);
+        let arg_address = arg_address
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_handler = arg_handler
+            .map(|arg| {
+                arg.add_ref();
+                ImplServerHandler::get_raw(arg)
+            })
+            .unwrap_or(std::ptr::null_mut());
+        cef_server_create(arg_address, arg_port, arg_backlog, arg_handler);
+    }
+}
+
+/// See [`cef_shared_process_message_builder_create`] for more documentation.
+pub fn shared_process_message_builder_create(
+    name: Option<&CefString>,
+    byte_size: usize,
+) -> Option<SharedProcessMessageBuilder> {
+    unsafe {
+        let (arg_name, arg_byte_size) = (name, byte_size);
+        let arg_name = arg_name
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let result = cef_shared_process_message_builder_create(arg_name, arg_byte_size);
+        if result.is_null() {
+            None
+        } else {
+            Some(result.wrap_result())
+        }
+    }
+}
+
+/// See [`cef_task_manager_get`] for more documentation.
+pub fn task_manager_get() -> Option<TaskManager> {
+    unsafe {
+        let result = cef_task_manager_get();
+        if result.is_null() {
+            None
+        } else {
+            Some(result.wrap_result())
+        }
+    }
+}
+
+/// See [`cef_get_current_platform_thread_id`] for more documentation.
+pub fn get_current_platform_thread_id() -> cef_platform_thread_id_t {
+    unsafe {
+        let result = cef_get_current_platform_thread_id();
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_get_current_platform_thread_handle`] for more documentation.
+pub fn get_current_platform_thread_handle() -> cef_platform_thread_handle_t {
+    unsafe {
+        let result = cef_get_current_platform_thread_handle();
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_thread_create`] for more documentation.
+pub fn thread_create(
+    display_name: Option<&CefString>,
+    priority: ThreadPriority,
+    message_loop_type: MessageLoopType,
+    stoppable: ::std::os::raw::c_int,
+    com_init_mode: ComInitMode,
+) -> Option<Thread> {
+    unsafe {
+        let (
+            arg_display_name,
+            arg_priority,
+            arg_message_loop_type,
+            arg_stoppable,
+            arg_com_init_mode,
+        ) = (
+            display_name,
+            priority,
+            message_loop_type,
+            stoppable,
+            com_init_mode,
+        );
+        let arg_display_name = arg_display_name
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_priority = arg_priority.into_raw();
+        let arg_message_loop_type = arg_message_loop_type.into_raw();
+        let arg_com_init_mode = arg_com_init_mode.into_raw();
+        let result = cef_thread_create(
+            arg_display_name,
+            arg_priority,
+            arg_message_loop_type,
+            arg_stoppable,
+            arg_com_init_mode,
+        );
+        if result.is_null() {
+            None
+        } else {
+            Some(result.wrap_result())
+        }
+    }
+}
+
+/// See [`cef_begin_tracing`] for more documentation.
+pub fn begin_tracing(
+    categories: Option<&CefString>,
+    callback: Option<&mut CompletionCallback>,
+) -> ::std::os::raw::c_int {
+    unsafe {
+        let (arg_categories, arg_callback) = (categories, callback);
+        let arg_categories = arg_categories
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_callback = arg_callback
+            .map(|arg| {
+                arg.add_ref();
+                ImplCompletionCallback::get_raw(arg)
+            })
+            .unwrap_or(std::ptr::null_mut());
+        let result = cef_begin_tracing(arg_categories, arg_callback);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_end_tracing`] for more documentation.
+pub fn end_tracing(
+    tracing_file: Option<&CefString>,
+    callback: Option<&mut EndTracingCallback>,
+) -> ::std::os::raw::c_int {
+    unsafe {
+        let (arg_tracing_file, arg_callback) = (tracing_file, callback);
+        let arg_tracing_file = arg_tracing_file
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let arg_callback = arg_callback
+            .map(|arg| {
+                arg.add_ref();
+                ImplEndTracingCallback::get_raw(arg)
+            })
+            .unwrap_or(std::ptr::null_mut());
+        let result = cef_end_tracing(arg_tracing_file, arg_callback);
+        result.wrap_result()
+    }
+}
+
+/// See [`cef_now_from_system_trace_time`] for more documentation.
+pub fn now_from_system_trace_time() -> i64 {
+    unsafe {
+        let result = cef_now_from_system_trace_time();
+        result.wrap_result()
+    }
+}
+
 /// See [`cef_urlrequest_create`] for more documentation.
 pub fn urlrequest_create(
     request: Option<&mut Request>,
@@ -50351,23 +53784,14 @@ pub fn urlrequest_create(
     }
 }
 
-/// See [`cef_label_button_create`] for more documentation.
-pub fn label_button_create(
-    delegate: Option<&mut ButtonDelegate>,
-    text: Option<&CefString>,
-) -> Option<LabelButton> {
+/// See [`cef_waitable_event_create`] for more documentation.
+pub fn waitable_event_create(
+    automatic_reset: ::std::os::raw::c_int,
+    initially_signaled: ::std::os::raw::c_int,
+) -> Option<WaitableEvent> {
     unsafe {
-        let (arg_delegate, arg_text) = (delegate, text);
-        let arg_delegate = arg_delegate
-            .map(|arg| {
-                arg.add_ref();
-                ImplButtonDelegate::get_raw(arg)
-            })
-            .unwrap_or(std::ptr::null_mut());
-        let arg_text = arg_text
-            .map(|arg| arg.into_raw())
-            .unwrap_or(std::ptr::null());
-        let result = cef_label_button_create(arg_delegate, arg_text);
+        let (arg_automatic_reset, arg_initially_signaled) = (automatic_reset, initially_signaled);
+        let result = cef_waitable_event_create(arg_automatic_reset, arg_initially_signaled);
         if result.is_null() {
             None
         } else {
@@ -50376,23 +53800,25 @@ pub fn label_button_create(
     }
 }
 
-/// See [`cef_menu_button_create`] for more documentation.
-pub fn menu_button_create(
-    delegate: Option<&mut MenuButtonDelegate>,
-    text: Option<&CefString>,
-) -> Option<MenuButton> {
+/// See [`cef_xml_reader_create`] for more documentation.
+pub fn xml_reader_create(
+    stream: Option<&mut StreamReader>,
+    encoding_type: XmlEncodingType,
+    uri: Option<&CefString>,
+) -> Option<XmlReader> {
     unsafe {
-        let (arg_delegate, arg_text) = (delegate, text);
-        let arg_delegate = arg_delegate
+        let (arg_stream, arg_encoding_type, arg_uri) = (stream, encoding_type, uri);
+        let arg_stream = arg_stream
             .map(|arg| {
                 arg.add_ref();
-                ImplMenuButtonDelegate::get_raw(arg)
+                ImplStreamReader::get_raw(arg)
             })
             .unwrap_or(std::ptr::null_mut());
-        let arg_text = arg_text
+        let arg_encoding_type = arg_encoding_type.into_raw();
+        let arg_uri = arg_uri
             .map(|arg| arg.into_raw())
             .unwrap_or(std::ptr::null());
-        let result = cef_menu_button_create(arg_delegate, arg_text);
+        let result = cef_xml_reader_create(arg_stream, arg_encoding_type, arg_uri);
         if result.is_null() {
             None
         } else {
@@ -50401,17 +53827,17 @@ pub fn menu_button_create(
     }
 }
 
-/// See [`cef_textfield_create`] for more documentation.
-pub fn textfield_create(delegate: Option<&mut TextfieldDelegate>) -> Option<Textfield> {
+/// See [`cef_zip_reader_create`] for more documentation.
+pub fn zip_reader_create(stream: Option<&mut StreamReader>) -> Option<ZipReader> {
     unsafe {
-        let arg_delegate = delegate;
-        let arg_delegate = arg_delegate
+        let arg_stream = stream;
+        let arg_stream = arg_stream
             .map(|arg| {
                 arg.add_ref();
-                ImplTextfieldDelegate::get_raw(arg)
+                ImplStreamReader::get_raw(arg)
             })
             .unwrap_or(std::ptr::null_mut());
-        let result = cef_textfield_create(arg_delegate);
+        let result = cef_zip_reader_create(arg_stream);
         if result.is_null() {
             None
         } else {
@@ -50491,25 +53917,6 @@ pub fn browser_view_get_for_browser(browser: Option<&mut Browser>) -> Option<Bro
             })
             .unwrap_or(std::ptr::null_mut());
         let result = cef_browser_view_get_for_browser(arg_browser);
-        if result.is_null() {
-            None
-        } else {
-            Some(result.wrap_result())
-        }
-    }
-}
-
-/// See [`cef_scroll_view_create`] for more documentation.
-pub fn scroll_view_create(delegate: Option<&mut ViewDelegate>) -> Option<ScrollView> {
-    unsafe {
-        let arg_delegate = delegate;
-        let arg_delegate = arg_delegate
-            .map(|arg| {
-                arg.add_ref();
-                ImplViewDelegate::get_raw(arg)
-            })
-            .unwrap_or(std::ptr::null_mut());
-        let result = cef_scroll_view_create(arg_delegate);
         if result.is_null() {
             None
         } else {
@@ -50683,6 +54090,56 @@ pub fn display_convert_screen_rect_from_pixels(rect: Option<&Rect>) -> Rect {
     }
 }
 
+/// See [`cef_label_button_create`] for more documentation.
+pub fn label_button_create(
+    delegate: Option<&mut ButtonDelegate>,
+    text: Option<&CefString>,
+) -> Option<LabelButton> {
+    unsafe {
+        let (arg_delegate, arg_text) = (delegate, text);
+        let arg_delegate = arg_delegate
+            .map(|arg| {
+                arg.add_ref();
+                ImplButtonDelegate::get_raw(arg)
+            })
+            .unwrap_or(std::ptr::null_mut());
+        let arg_text = arg_text
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let result = cef_label_button_create(arg_delegate, arg_text);
+        if result.is_null() {
+            None
+        } else {
+            Some(result.wrap_result())
+        }
+    }
+}
+
+/// See [`cef_menu_button_create`] for more documentation.
+pub fn menu_button_create(
+    delegate: Option<&mut MenuButtonDelegate>,
+    text: Option<&CefString>,
+) -> Option<MenuButton> {
+    unsafe {
+        let (arg_delegate, arg_text) = (delegate, text);
+        let arg_delegate = arg_delegate
+            .map(|arg| {
+                arg.add_ref();
+                ImplMenuButtonDelegate::get_raw(arg)
+            })
+            .unwrap_or(std::ptr::null_mut());
+        let arg_text = arg_text
+            .map(|arg| arg.into_raw())
+            .unwrap_or(std::ptr::null());
+        let result = cef_menu_button_create(arg_delegate, arg_text);
+        if result.is_null() {
+            None
+        } else {
+            Some(result.wrap_result())
+        }
+    }
+}
+
 /// See [`cef_panel_create`] for more documentation.
 pub fn panel_create(delegate: Option<&mut PanelDelegate>) -> Option<Panel> {
     unsafe {
@@ -50694,6 +54151,44 @@ pub fn panel_create(delegate: Option<&mut PanelDelegate>) -> Option<Panel> {
             })
             .unwrap_or(std::ptr::null_mut());
         let result = cef_panel_create(arg_delegate);
+        if result.is_null() {
+            None
+        } else {
+            Some(result.wrap_result())
+        }
+    }
+}
+
+/// See [`cef_scroll_view_create`] for more documentation.
+pub fn scroll_view_create(delegate: Option<&mut ViewDelegate>) -> Option<ScrollView> {
+    unsafe {
+        let arg_delegate = delegate;
+        let arg_delegate = arg_delegate
+            .map(|arg| {
+                arg.add_ref();
+                ImplViewDelegate::get_raw(arg)
+            })
+            .unwrap_or(std::ptr::null_mut());
+        let result = cef_scroll_view_create(arg_delegate);
+        if result.is_null() {
+            None
+        } else {
+            Some(result.wrap_result())
+        }
+    }
+}
+
+/// See [`cef_textfield_create`] for more documentation.
+pub fn textfield_create(delegate: Option<&mut TextfieldDelegate>) -> Option<Textfield> {
+    unsafe {
+        let arg_delegate = delegate;
+        let arg_delegate = arg_delegate
+            .map(|arg| {
+                arg.add_ref();
+                ImplTextfieldDelegate::get_raw(arg)
+            })
+            .unwrap_or(std::ptr::null_mut());
+        let result = cef_textfield_create(arg_delegate);
         if result.is_null() {
             None
         } else {

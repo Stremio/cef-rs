@@ -599,11 +599,25 @@ impl SignatureRef<'_> {
                 let arg_name = format_ident!("arg_{slice_name}");
                 let out_name = format_ident!("out_{slice_name}");
                 let vec_name = format_ident!("vec_{slice_name}");
-                let add_refs = if tree.root(&slice_ty.to_token_stream().to_string()) == BASE_REF_COUNTED {
-                    Some(quote! { elem.add_ref(); })
+                let slice_ty = slice_ty.to_token_stream().to_string();
+                let get_elem = if tree.root(&slice_ty) == BASE_REF_COUNTED {
+                    quote! {
+                        map(|elem| {
+                            elem.add_ref();
+                            elem.get_raw()
+                        })
+                    }
+                } else if tree.cef_name_map.contains_key(&slice_ty) {
+                    quote! { map(|elem| elem.get_raw()) }
                 } else {
-                    None
+                    quote! { copied() }
                 };
+                let collect_vec = if tree.cef_name_map.contains_key(&slice_ty) {
+                    quote! { iter().#get_elem.collect::<Vec<_>>() }
+                } else {
+                    quote! { to_vec() }
+                };
+
                 match (count_modifiers.as_slice(), slice_modifiers.as_slice()) {
                     ([], [TypeModifier::Slice]) => Some(quote! {
                         let #arg_count = #arg_name
@@ -612,13 +626,7 @@ impl SignatureRef<'_> {
                             .unwrap_or_default();
                         let #vec_name = #arg_name
                             .as_ref()
-                            .map(|arg| arg
-                                .iter()
-                                .map(|elem| {
-                                    #add_refs
-                                    elem.get_raw()
-                                })
-                                .collect::<Vec<_>>())
+                            .map(|arg| arg.#collect_vec)
                             .unwrap_or_default();
                         let #arg_name = if #vec_name.is_empty() {
                             std::ptr::null()
@@ -637,10 +645,7 @@ impl SignatureRef<'_> {
                                 .iter()
                                 .map(|elem| elem
                                     .as_ref()
-                                    .map(|elem| {
-                                        #add_refs
-                                        elem.get_raw()
-                                    })
+                                    .#get_elem
                                     .unwrap_or(std::ptr::null_mut()))
                                 .collect::<Vec<_>>())
                             .unwrap_or_default();
@@ -659,13 +664,7 @@ impl SignatureRef<'_> {
                         let #out_name = #arg_name;
                         let mut #vec_name = #out_name
                             .as_ref()
-                            .map(|arg| arg
-                                .iter()
-                                .map(|elem| {
-                                    #add_refs
-                                    elem.get_raw()
-                                })
-                                .collect::<Vec<_>>())
+                            .map(|arg| arg.#collect_vec)
                             .unwrap_or_default();
                         let #arg_name = if #vec_name.is_empty() {
                             std::ptr::null_mut()
@@ -686,10 +685,7 @@ impl SignatureRef<'_> {
                                 .iter()
                                 .map(|elem| elem
                                     .as_ref()
-                                    .map(|elem| {
-                                        #add_refs
-                                        elem.get_raw()
-                                    })
+                                    .#get_elem
                                     .unwrap_or(std::ptr::null_mut()))
                                 .collect::<Vec<_>>())
                             .unwrap_or_default();
@@ -1110,7 +1106,7 @@ impl SignatureRef<'_> {
                                     None
                                 } else {
                                     let #arg_name = unsafe { std::slice::from_raw_parts(#arg_name, #arg_count) };
-                                    let #arg_name: Vec<_> = #arg_name.iter().map(|elem| elem.clone().into()).collect();
+                                    let #arg_name: Vec<_> = #arg_name.iter().map(|elem| (*elem).into()).collect();
                                     Some(#arg_name)
                                 };
                                 let #arg_name = #arg_name.as_deref();
@@ -1748,7 +1744,8 @@ impl ParseTree<'_> {
                 non_camel_case_types,
                 unused_variables,
                 clippy::not_unsafe_ptr_arg_deref,
-                clippy::too_many_arguments
+                clippy::too_many_arguments,
+                clippy::let_unit_value
             )]
             use crate::rc::{
                 ConvertParam, ConvertReturnValue, Rc, RcImpl, RefGuard, WrapParamRef,
@@ -2723,6 +2720,7 @@ fn make_my_struct() -> {rust_name} {{
                         $($generic_type: $first_generic_type_bound $(+ $generic_type_bound)*,)+
                     )?
                     {
+                        #[allow(clippy::new_ret_no_self)]
                         pub fn new($($field_name: $field_type),*) -> #rust_name {
                             #rust_name::new(
                                 Self {
@@ -3514,6 +3512,31 @@ fn make_my_struct() -> {rust_name} {{
                     })
                 }
             });
+            let impl_raw_repr = e.ty.and_then(|ty| {
+                ty.attrs
+                    .iter()
+                    .find_map(|attr| match (attr.style, &attr.meta) {
+                        (
+                            syn::AttrStyle::Outer,
+                            syn::Meta::List(syn::MetaList {
+                                path,
+                                delimiter: syn::MacroDelimiter::Paren(_),
+                                tokens,
+                            }),
+                        ) if path.to_token_stream().to_string() == quote! { repr }.to_string() => {
+                            let repr = syn::parse2::<syn::Type>(tokens.clone()).ok()?;
+                            Some(quote! {
+                                impl #rust_name {
+                                    #[doc = "Get the raw integer representation."]
+                                    pub fn get_raw(&self) -> #repr {
+                                        self.0 as #repr
+                                    }
+                                }
+                            })
+                        }
+                        _ => None,
+                    })
+            });
             let impl_default =
                 e.ty.and_then(|ty| ty.variants.first())
                     .map(|v| {
@@ -3550,6 +3573,8 @@ fn make_my_struct() -> {rust_name} {{
                 }
 
                 #declare_values
+
+                #impl_raw_repr
 
                 impl Default for #rust_name {
                     fn default() -> Self {

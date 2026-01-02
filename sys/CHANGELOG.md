@@ -7,11 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [143.4.0+143.0.13](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v143.3.0+143.0.13...cef-dll-sys-v143.4.0+143.0.13) - 2025-12-30
+
+### Added
+
+- add cef_task_manager_capi.h
+
+### Other
+
+- update bindings
+
+## [143.2.0+143.0.10](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v143.1.0+143.0.10...cef-dll-sys-v143.2.0+143.0.10) - 2025-12-23
+
+### Added
+
+- add all C API headers to wrapper.h, except one for which bindings are still invalid
+
+### Other
+
+- update bindings
+
 ## [143.1.0+143.0.10](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v143.0.0+143.0.9...cef-dll-sys-v143.1.0+143.0.10) - 2025-12-13
 
 ### Other
 
 - *(release)* update CEF version to 143.0.10
+- Wrap more C API headers
 
 ## [143.0.0+143.0.9](https://github.com/tauri-apps/cef-rs/compare/cef-dll-sys-v142.5.1+142.0.17...cef-dll-sys-v143.0.0+143.0.9) - 2025-12-11
 
