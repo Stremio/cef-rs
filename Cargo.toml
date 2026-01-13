@@ -63,7 +63,7 @@ x11-dl = "2"
 
 [workspace.dependencies.windows-sys]
 version = "0.61"
-features = ["Win32_System_Environment", "Win32_System_LibraryLoader"]
+features = ["Win32_System_Environment", "Win32_System_LibraryLoader", "Win32_UI_WindowsAndMessaging"]
 
 [workspace.dependencies.windows]
 version = "0.62"
