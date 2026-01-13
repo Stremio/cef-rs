@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [143.7.1+143.0.14](https://github.com/tauri-apps/cef-rs/compare/cef-v143.7.0+143.0.14...cef-v143.7.1+143.0.14) - 2026-01-13
+
+### Other
+
+- update Cargo.toml dependencies
+
 ## [143.6.0+143.0.13](https://github.com/tauri-apps/cef-rs/compare/cef-v143.5.0+143.0.13...cef-v143.6.0+143.0.13) - 2026-01-03
 
 ### Added
