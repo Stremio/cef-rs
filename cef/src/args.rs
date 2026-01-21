@@ -68,8 +68,7 @@ impl Args {
                 std::env::args().collect::<Vec<_>>().join(" ").as_str(),
             )));
             cmd_line
-        });
-        cmd_line
+        })
     }
 }
 
