@@ -17,21 +17,22 @@ pub const CEF_API_VERSION_14000: i32 = 14000;
 pub const CEF_API_VERSION_14100: i32 = 14100;
 pub const CEF_API_VERSION_14200: i32 = 14200;
 pub const CEF_API_VERSION_14300: i32 = 14300;
+pub const CEF_API_VERSION_14400: i32 = 14400;
 pub const CEF_API_VERSION_999998: i32 = 999998;
 pub const CEF_API_VERSION_999999: i32 = 999999;
 pub const CEF_API_VERSION_MIN: i32 = 13300;
-pub const CEF_API_VERSION_LAST: i32 = 14300;
+pub const CEF_API_VERSION_LAST: i32 = 14400;
 pub const CEF_API_VERSION_EXPERIMENTAL: i32 = 999999;
 pub const CEF_API_VERSION_NEXT: i32 = 999998;
 pub const CEF_API_VERSION: i32 = 999999;
-pub const CEF_VERSION: &[u8; 42] = b"143.0.14+gdd46a37+chromium-143.0.7499.193\0";
-pub const CEF_VERSION_MAJOR: i32 = 143;
+pub const CEF_VERSION: &[u8; 40] = b"144.0.6+g5f7e671+chromium-144.0.7559.59\0";
+pub const CEF_VERSION_MAJOR: i32 = 144;
 pub const CEF_VERSION_MINOR: i32 = 0;
-pub const CEF_VERSION_PATCH: i32 = 14;
-pub const CHROME_VERSION_MAJOR: i32 = 143;
+pub const CEF_VERSION_PATCH: i32 = 6;
+pub const CHROME_VERSION_MAJOR: i32 = 144;
 pub const CHROME_VERSION_MINOR: i32 = 0;
-pub const CHROME_VERSION_BUILD: i32 = 7499;
-pub const CHROME_VERSION_PATCH: i32 = 193;
+pub const CHROME_VERSION_BUILD: i32 = 7559;
+pub const CHROME_VERSION_PATCH: i32 = 59;
 unsafe extern "C" {
     #[doc = "\n Load the CEF library at the specified |path|. Returns true (1) on\n success and false (0) on failure.\n"]
     pub fn cef_load_library(path: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int;
@@ -41,6 +42,16 @@ unsafe extern "C" {
     pub fn cef_unload_library() -> ::std::os::raw::c_int;
 }
 unsafe extern "C" {
+    #[doc = "\n Load the CEF library from the expected app bundle location relative to the\n executable. Pass |helper| as 1 for helper processes or 0 for the main\n process. Returns an opaque handle on success or NULL on failure. The\n returned handle should be passed to cef_scoped_library_loader_free()\n immediately before process termination. This is a wrapper around\n CefScopedLibraryLoader for C API users.\n"]
+    pub fn cef_scoped_library_loader_create(
+        helper: ::std::os::raw::c_int,
+    ) -> *mut ::std::os::raw::c_void;
+}
+unsafe extern "C" {
+    #[doc = "\n Destroy the specified library loader handle created by\n cef_scoped_library_loader_create().\n"]
+    pub fn cef_scoped_library_loader_free(loader: *mut ::std::os::raw::c_void);
+}
+unsafe extern "C" {
     #[doc = "\n Initialize the sandbox for this process. Returns the sandbox context\n handle on success or NULL on failure. The returned handle should be\n passed to cef_sandbox_destroy() immediately before process termination.\n"]
     pub fn cef_sandbox_initialize(
         argc: ::std::os::raw::c_int,
@@ -48,8 +59,19 @@ unsafe extern "C" {
     ) -> *mut ::std::os::raw::c_void;
 }
 unsafe extern "C" {
-    #[doc = "\n Destroy the specified sandbox context handle.\n"]
+    #[doc = "\n Destroy the specified sandbox context handle created by\n cef_sandbox_initialize().\n"]
     pub fn cef_sandbox_destroy(sandbox_context: *mut ::std::os::raw::c_void);
+}
+unsafe extern "C" {
+    #[doc = "\n Initialize the scoped sandbox for this process. Returns an opaque handle\n on success or NULL on failure. The returned handle should be passed to\n cef_scoped_sandbox_destroy() immediately before process termination.\n This is a wrapper around CefScopedSandboxContext for C API users.\n"]
+    pub fn cef_scoped_sandbox_initialize(
+        argc: ::std::os::raw::c_int,
+        argv: *mut *mut ::std::os::raw::c_char,
+    ) -> *mut ::std::os::raw::c_void;
+}
+unsafe extern "C" {
+    #[doc = "\n Destroy the specified scoped sandbox handle created by\n cef_scoped_sandbox_initialize().\n"]
+    pub fn cef_scoped_sandbox_destroy(sandbox_context: *mut ::std::os::raw::c_void);
 }
 unsafe extern "C" {
     #[doc = "\n Configures the CEF API version and returns API hashes for the libcef\n library. The returned string is owned by the library and should not be\n freed. The |version| parameter should be CEF_API_VERSION and any changes to\n this value will be ignored after the first call to this method. The |entry|\n parameter describes which hash value will be returned:\n\n 0 - CEF_API_HASH_PLATFORM\n 1 - CEF_API_HASH_UNIVERSAL (deprecated, same as CEF_API_HASH_PLATFORM)\n 2 - CEF_COMMIT_HASH (from cef_version.h)\n"]
@@ -766,8 +788,7 @@ pub enum cef_content_setting_types_t {
     CEF_CONTENT_SETTING_TYPE_TPCD_HEURISTICS_GRANTS = 89,
     #[doc = " Content Setting for 3PC accesses granted by metadata delivered via the\n component updater service. This type will only be used when\n `net::features::kTpcdMetadataGrants` is enabled."]
     CEF_CONTENT_SETTING_TYPE_TPCD_METADATA_GRANTS = 90,
-    #[doc = " Content Setting for 3PC accesses granted via 3PC deprecation trial."]
-    CEF_CONTENT_SETTING_TYPE_TPCD_TRIAL = 91,
+    CEF_CONTENT_SETTING_TYPE_TPCD_TRIAL_DEPRECATED = 91,
     CEF_CONTENT_SETTING_TYPE_TOP_LEVEL_TPCD_TRIAL_DEPRECATED = 92,
     CEF_CONTENT_SETTING_TYPE_TOP_LEVEL_TPCD_ORIGIN_TRIAL_DEPRECATED = 93,
     #[doc = " Content setting used to indicate whether entering picture-in-picture\n automatically should be enabled."]
@@ -1728,7 +1749,6 @@ pub enum cef_errorcode_t {
     ERR_ADDRESS_UNREACHABLE = -109,
     ERR_SSL_CLIENT_AUTH_CERT_NEEDED = -110,
     ERR_TUNNEL_CONNECTION_FAILED = -111,
-    ERR_NO_SSL_VERSIONS_ENABLED = -112,
     ERR_SSL_VERSION_OR_CIPHER_MISMATCH = -113,
     ERR_SSL_RENEGOTIATION_REQUESTED = -114,
     ERR_PROXY_AUTH_UNSUPPORTED = -115,
@@ -1752,13 +1772,10 @@ pub enum cef_errorcode_t {
     ERR_NAME_RESOLUTION_FAILED = -137,
     ERR_NETWORK_ACCESS_DENIED = -138,
     ERR_TEMPORARILY_THROTTLED = -139,
-    ERR_HTTPS_PROXY_TUNNEL_RESPONSE_REDIRECT = -140,
     ERR_SSL_CLIENT_AUTH_SIGNATURE_FAILED = -141,
     ERR_MSG_TOO_BIG = -142,
     ERR_WS_PROTOCOL_ERROR = -145,
     ERR_ADDRESS_IN_USE = -147,
-    ERR_SSL_HANDSHAKE_NOT_COMPLETED = -148,
-    ERR_SSL_BAD_PEER_PUBLIC_KEY = -149,
     ERR_SSL_PINNED_KEY_NOT_IN_CERT_CHAIN = -150,
     ERR_CLIENT_AUTH_CERT_TYPE_UNSUPPORTED = -151,
     ERR_SSL_DECRYPT_ERROR_ALERT = -153,
@@ -1826,9 +1843,6 @@ pub enum cef_errorcode_t {
     ERR_MALFORMED_IDENTITY = -329,
     ERR_CONTENT_DECODING_FAILED = -330,
     ERR_NETWORK_IO_SUSPENDED = -331,
-    ERR_SYN_REPLY_NOT_RECEIVED = -332,
-    ERR_ENCODING_CONVERSION_FAILED = -333,
-    ERR_UNRECOGNIZED_FTP_DIRECTORY_LISTING_FORMAT = -334,
     ERR_NO_SUPPORTED_PROXIES = -336,
     ERR_HTTP2_PROTOCOL_ERROR = -337,
     ERR_INVALID_AUTH_CREDENTIALS = -338,
@@ -1896,6 +1910,7 @@ pub enum cef_errorcode_t {
     ERR_INVALID_WEB_BUNDLE = -505,
     ERR_TRUST_TOKEN_OPERATION_FAILED = -506,
     ERR_TRUST_TOKEN_OPERATION_SUCCESS_WITHOUT_SENDING_REQUEST = -507,
+    ERR_HTTPENGINE_PROVIDER_IN_USE = -508,
     ERR_PKCS12_IMPORT_BAD_PASSWORD = -701,
     ERR_PKCS12_IMPORT_FAILED = -702,
     ERR_IMPORT_CA_CERT_NOT_CA = -703,
@@ -4089,7 +4104,10 @@ pub enum cef_chrome_page_action_icon_type_t {
     CEF_CPAIT_CHANGE_PASSWORD = 33,
     CEF_CPAIT_LENS_OVERLAY_HOMEWORK = 34,
     CEF_CPAIT_AI_MODE = 35,
-    CEF_CPAIT_NUM_VALUES = 36,
+    CEF_CPAIT_READING_MODE = 36,
+    CEF_CPAIT_CONTEXTUAL_SIDE_PANEL = 37,
+    CEF_CPAIT_JS_OPTIMIZATIONS = 38,
+    CEF_CPAIT_NUM_VALUES = 39,
 }
 #[repr(u32)]
 #[non_exhaustive]
@@ -8068,10 +8086,17 @@ pub struct _cef_request_context_t {
             observer: *mut _cef_setting_observer_t,
         ) -> *mut _cef_registration_t,
     >,
+    #[doc = "\n Clears the HTTP cache. If |callback| is non-NULL it will be executed on\n the UI thread after completion.\n"]
+    pub clear_http_cache: ::std::option::Option<
+        unsafe extern "C" fn(
+            self_: *mut _cef_request_context_t,
+            callback: *mut _cef_completion_callback_t,
+        ),
+    >,
 }
 #[allow(clippy::unnecessary_operation, clippy::identity_op)]
 const _: () = {
-    ["Size of _cef_request_context_t"][::std::mem::size_of::<_cef_request_context_t>() - 264usize];
+    ["Size of _cef_request_context_t"][::std::mem::size_of::<_cef_request_context_t>() - 272usize];
     ["Alignment of _cef_request_context_t"]
         [::std::mem::align_of::<_cef_request_context_t>() - 8usize];
     ["Offset of field: _cef_request_context_t::base"]
@@ -8124,6 +8149,8 @@ const _: () = {
     ) - 248usize];
     ["Offset of field: _cef_request_context_t::add_setting_observer"]
         [::std::mem::offset_of!(_cef_request_context_t, add_setting_observer) - 256usize];
+    ["Offset of field: _cef_request_context_t::clear_http_cache"]
+        [::std::mem::offset_of!(_cef_request_context_t, clear_http_cache) - 264usize];
 };
 #[doc = "\n A request context provides request handling for a set of related browser or\n URL request objects. A request context can be specified when creating a new\n browser via the cef_browser_host_t static factory functions or when creating\n a new URL request via the cef_urlrequest_t static factory functions. Browser\n objects with different request contexts will never be hosted in the same\n render process. Browser objects with the same request context may or may not\n be hosted in the same render process depending on the process model. Browser\n objects created indirectly via the JavaScript window.open function or\n targeted links will share the same render process and the same request\n context as the source browser. When running in single-process mode there is\n only a single render process (the main process) and so all browsers created\n in single-process mode will share the same request context. This will be the\n first request context passed into a cef_browser_host_t static factory\n function and all other request context objects will be ignored.\n\n NOTE: This struct is allocated DLL-side.\n"]
 pub type cef_request_context_t = _cef_request_context_t;
@@ -10318,10 +10345,14 @@ pub struct _cef_download_item_t {
     pub get_mime_type: ::std::option::Option<
         unsafe extern "C" fn(self_: *mut _cef_download_item_t) -> cef_string_userfree_t,
     >,
+    #[doc = "\n Returns true (1) if the download has been paused.\n"]
+    pub is_paused: ::std::option::Option<
+        unsafe extern "C" fn(self_: *mut _cef_download_item_t) -> ::std::os::raw::c_int,
+    >,
 }
 #[allow(clippy::unnecessary_operation, clippy::identity_op)]
 const _: () = {
-    ["Size of _cef_download_item_t"][::std::mem::size_of::<_cef_download_item_t>() - 192usize];
+    ["Size of _cef_download_item_t"][::std::mem::size_of::<_cef_download_item_t>() - 200usize];
     ["Alignment of _cef_download_item_t"][::std::mem::align_of::<_cef_download_item_t>() - 8usize];
     ["Offset of field: _cef_download_item_t::base"]
         [::std::mem::offset_of!(_cef_download_item_t, base) - 0usize];
@@ -10363,6 +10394,8 @@ const _: () = {
         [::std::mem::offset_of!(_cef_download_item_t, get_content_disposition) - 176usize];
     ["Offset of field: _cef_download_item_t::get_mime_type"]
         [::std::mem::offset_of!(_cef_download_item_t, get_mime_type) - 184usize];
+    ["Offset of field: _cef_download_item_t::is_paused"]
+        [::std::mem::offset_of!(_cef_download_item_t, is_paused) - 192usize];
 };
 #[doc = "\n Structure used to represent a download item.\n\n NOTE: This struct is allocated DLL-side.\n"]
 pub type cef_download_item_t = _cef_download_item_t;
@@ -11411,7 +11444,7 @@ pub struct _cef_render_handler_t {
             height: ::std::os::raw::c_int,
         ),
     >,
-    #[doc = "\n Called when an element has been rendered to the shared texture handle.\n |type| indicates whether the element is the view or the popup widget.\n |dirtyRects| contains the set of rectangles in pixel coordinates that need\n to be repainted. |info| contains the shared handle; on Windows it is a\n HANDLE to a texture that can be opened with D3D11 OpenSharedResource, on\n macOS it is an IOSurface pointer that can be opened with Metal or OpenGL,\n and on Linux it contains several planes, each with an fd to the underlying\n system native buffer.\n\n The underlying implementation uses a pool to deliver frames. As a result,\n the handle may differ every frame depending on how many frames are in-\n progress. The handle's resource cannot be cached and cannot be accessed\n outside of this callback. It should be reopened each time this callback is\n executed and the contents should be copied to a texture owned by the\n client application. The contents of |info| will be released back to the\n pool after this callback returns.\n"]
+    #[doc = "\n Called when an element has been rendered to the shared texture handle.\n |type| indicates whether the element is the view or the popup widget.\n |dirtyRects| contains the set of rectangles in pixel coordinates that need\n to be repainted. |info| contains the shared handle; on Windows it is a\n HANDLE to a texture that can be opened with D3D11 OpenSharedResource1 or\n D3D12 OpenSharedHandle, on macOS it is an IOSurface pointer that can be\n opened with Metal or OpenGL, and on Linux it contains several planes, each\n with an fd to the underlying system native buffer.\n\n The underlying implementation uses a pool to deliver frames. As a result,\n the handle may differ every frame depending on how many frames are in-\n progress. The handle's resource cannot be cached and cannot be accessed\n outside of this callback. It should be reopened each time this callback is\n executed and the contents should be copied to a texture owned by the\n client application. The contents of |info| will be released back to the\n pool after this callback returns.\n"]
     pub on_accelerated_paint: ::std::option::Option<
         unsafe extern "C" fn(
             self_: *mut _cef_render_handler_t,
@@ -15454,11 +15487,18 @@ pub struct _cef_browser_view_delegate_t {
             browser_view: *mut _cef_browser_view_t,
         ) -> ::std::os::raw::c_int,
     >,
+    #[doc = "\n Return true (1) to allow opening Document picture-in-picture without user\n activation. Default is false (0) (user activation required).\n"]
+    pub allow_picture_in_picture_without_user_activation: ::std::option::Option<
+        unsafe extern "C" fn(
+            self_: *mut _cef_browser_view_delegate_t,
+            browser_view: *mut _cef_browser_view_t,
+        ) -> ::std::os::raw::c_int,
+    >,
 }
 #[allow(clippy::unnecessary_operation, clippy::identity_op)]
 const _: () = {
     ["Size of _cef_browser_view_delegate_t"]
-        [::std::mem::size_of::<_cef_browser_view_delegate_t>() - 200usize];
+        [::std::mem::size_of::<_cef_browser_view_delegate_t>() - 208usize];
     ["Alignment of _cef_browser_view_delegate_t"]
         [::std::mem::align_of::<_cef_browser_view_delegate_t>() - 8usize];
     ["Offset of field: _cef_browser_view_delegate_t::base"]
@@ -15490,6 +15530,7 @@ const _: () = {
         allow_move_for_picture_in_picture
     )
         - 192usize];
+    ["Offset of field: _cef_browser_view_delegate_t::allow_picture_in_picture_without_user_activation"] [:: std :: mem :: offset_of ! (_cef_browser_view_delegate_t , allow_picture_in_picture_without_user_activation) - 200usize] ;
 };
 #[doc = "\n Implement this structure to handle BrowserView events. The functions of this\n structure will be called on the browser process UI thread unless otherwise\n indicated.\n\n NOTE: This struct is allocated client-side.\n"]
 pub type cef_browser_view_delegate_t = _cef_browser_view_delegate_t;
