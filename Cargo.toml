@@ -55,7 +55,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 syn = { version = "2", features = ["full"] }
 thiserror = "2"
-toml_edit = "0.24"
+toml_edit = "0.25"
 tracing = "0.1"
 wgpu = "28"
 winres = "0.1"
