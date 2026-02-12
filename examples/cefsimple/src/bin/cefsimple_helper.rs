@@ -17,6 +17,9 @@ fn main() {
         loader
     };
 
+    // Initialize the CEF API version.
+    let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
+
     execute_process(
         Some(args.as_main_args()),
         None::<&mut App>,

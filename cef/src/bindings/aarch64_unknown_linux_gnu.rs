@@ -11208,6 +11208,8 @@ pub trait ImplRequestContext: ImplPreferenceManager {
     fn chrome_color_scheme_variant(&self) -> ColorVariant;
     #[doc = "See [`_cef_request_context_t::add_setting_observer`] for more documentation."]
     fn add_setting_observer(&self, observer: Option<&mut SettingObserver>) -> Option<Registration>;
+    #[doc = "See [`_cef_request_context_t::clear_http_cache`] for more documentation."]
+    fn clear_http_cache(&self, callback: Option<&mut CompletionCallback>);
     fn get_raw(&self) -> *mut _cef_request_context_t {
         <Self as ImplPreferenceManager>::get_raw(self).cast()
     }
@@ -11678,6 +11680,21 @@ impl ImplRequestContext for RequestContext {
                     }
                 })
                 .unwrap_or_default()
+        }
+    }
+    fn clear_http_cache(&self, callback: Option<&mut CompletionCallback>) {
+        unsafe {
+            if let Some(f) = self.0.clear_http_cache {
+                let arg_callback = callback;
+                let arg_self_ = self.into_raw();
+                let arg_callback = arg_callback
+                    .map(|arg| {
+                        arg.add_ref();
+                        ImplCompletionCallback::get_raw(arg)
+                    })
+                    .unwrap_or(std::ptr::null_mut());
+                f(arg_self_, arg_callback);
+            }
         }
     }
     fn get_raw(&self) -> *mut _cef_request_context_t {
@@ -18413,6 +18430,8 @@ pub trait ImplDownloadItem: Clone + Sized + Rc {
     fn content_disposition(&self) -> CefStringUserfree;
     #[doc = "See [`_cef_download_item_t::get_mime_type`] for more documentation."]
     fn mime_type(&self) -> CefStringUserfree;
+    #[doc = "See [`_cef_download_item_t::is_paused`] for more documentation."]
+    fn is_paused(&self) -> ::std::os::raw::c_int;
     fn get_raw(&self) -> *mut _cef_download_item_t;
 }
 impl ImplDownloadItem for DownloadItem {
@@ -18636,6 +18655,18 @@ impl ImplDownloadItem for DownloadItem {
         unsafe {
             self.0
                 .get_mime_type
+                .map(|f| {
+                    let arg_self_ = self.into_raw();
+                    let result = f(arg_self_);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn is_paused(&self) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .is_paused
                 .map(|f| {
                     let arg_self_ = self.into_raw();
                     let result = f(arg_self_);
@@ -37253,6 +37284,13 @@ pub trait ImplBrowserViewDelegate: ImplViewDelegate {
     ) -> ::std::os::raw::c_int {
         Default::default()
     }
+    #[doc = "See [`_cef_browser_view_delegate_t::allow_picture_in_picture_without_user_activation`] for more documentation."]
+    fn allow_picture_in_picture_without_user_activation(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+    ) -> ::std::os::raw::c_int {
+        Default::default()
+    }
     fn init_methods(object: &mut _cef_browser_view_delegate_t) {
         impl_cef_view_delegate_t::init_methods::<Self, _cef_browser_view_delegate_t>(
             &mut object.base,
@@ -37284,6 +37322,8 @@ mod impl_cef_browser_view_delegate_t {
         object.on_gesture_command = Some(on_gesture_command::<I, R>);
         object.get_browser_runtime_style = Some(get_browser_runtime_style::<I, R>);
         object.allow_move_for_picture_in_picture = Some(allow_move_for_picture_in_picture::<I, R>);
+        object.allow_picture_in_picture_without_user_activation =
+            Some(allow_picture_in_picture_without_user_activation::<I, R>);
     }
     extern "C" fn on_browser_created<I: ImplBrowserViewDelegate, R: Rc>(
         self_: *mut _cef_browser_view_delegate_t,
@@ -37443,6 +37483,23 @@ mod impl_cef_browser_view_delegate_t {
             .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
         let arg_browser_view = arg_browser_view.as_mut();
         ImplBrowserViewDelegate::allow_move_for_picture_in_picture(
+            &arg_self_.interface,
+            arg_browser_view,
+        )
+    }
+    extern "C" fn allow_picture_in_picture_without_user_activation<
+        I: ImplBrowserViewDelegate,
+        R: Rc,
+    >(
+        self_: *mut _cef_browser_view_delegate_t,
+        browser_view: *mut _cef_browser_view_t,
+    ) -> ::std::os::raw::c_int {
+        let (arg_self_, arg_browser_view) = (self_, browser_view);
+        let arg_self_: &RcImpl<R, I> = RcImpl::get(arg_self_.cast());
+        let mut arg_browser_view = unsafe { arg_browser_view.as_mut() }
+            .map(|arg| BrowserView(unsafe { RefGuard::from_raw(arg) }));
+        let arg_browser_view = arg_browser_view.as_mut();
+        ImplBrowserViewDelegate::allow_picture_in_picture_without_user_activation(
             &arg_self_.interface,
             arg_browser_view,
         )
@@ -37729,6 +37786,28 @@ impl ImplBrowserViewDelegate for BrowserViewDelegate {
         unsafe {
             self.0
                 .allow_move_for_picture_in_picture
+                .map(|f| {
+                    let arg_browser_view = browser_view;
+                    let arg_self_ = self.into_raw();
+                    let arg_browser_view = arg_browser_view
+                        .map(|arg| {
+                            arg.add_ref();
+                            ImplBrowserView::get_raw(arg)
+                        })
+                        .unwrap_or(std::ptr::null_mut());
+                    let result = f(arg_self_, arg_browser_view);
+                    result.wrap_result()
+                })
+                .unwrap_or_default()
+        }
+    }
+    fn allow_picture_in_picture_without_user_activation(
+        &self,
+        browser_view: Option<&mut BrowserView>,
+    ) -> ::std::os::raw::c_int {
+        unsafe {
+            self.0
+                .allow_picture_in_picture_without_user_activation
                 .map(|f| {
                     let arg_browser_view = browser_view;
                     let arg_self_ = self.into_raw();
@@ -45012,9 +45091,9 @@ impl ContentSettingTypes {
     #[doc = "See [`cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_TPCD_METADATA_GRANTS`] for more documentation."]
     pub const TPCD_METADATA_GRANTS: Self =
         Self(cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_TPCD_METADATA_GRANTS);
-    #[doc = "See [`cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_TPCD_TRIAL`] for more documentation."]
-    pub const TPCD_TRIAL: Self =
-        Self(cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_TPCD_TRIAL);
+    #[doc = "See [`cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_TPCD_TRIAL_DEPRECATED`] for more documentation."]
+    pub const TPCD_TRIAL_DEPRECATED: Self =
+        Self(cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_TPCD_TRIAL_DEPRECATED);
     #[doc = "See [`cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_TOP_LEVEL_TPCD_TRIAL_DEPRECATED`] for more documentation."]
     pub const TOP_LEVEL_TPCD_TRIAL_DEPRECATED: Self =
         Self(cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_TOP_LEVEL_TPCD_TRIAL_DEPRECATED);
@@ -45118,6 +45197,12 @@ impl ContentSettingTypes {
     pub const SUSPICIOUS_NOTIFICATION_SHOW_ORIGINAL: Self = Self(
         cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_SUSPICIOUS_NOTIFICATION_SHOW_ORIGINAL,
     );
+    #[doc = "See [`cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_LOCAL_NETWORK`] for more documentation."]
+    pub const LOCAL_NETWORK: Self =
+        Self(cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_LOCAL_NETWORK);
+    #[doc = "See [`cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_LOOPBACK_NETWORK`] for more documentation."]
+    pub const LOOPBACK_NETWORK: Self =
+        Self(cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_LOOPBACK_NETWORK);
     #[doc = "See [`cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self =
         Self(cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_NUM_VALUES);
@@ -45791,6 +45876,9 @@ impl Errorcode {
     #[doc = "See [`cef_errorcode_t::ERR_BLOCKED_BY_FINGERPRINTING_PROTECTION`] for more documentation."]
     pub const BLOCKED_BY_FINGERPRINTING_PROTECTION: Self =
         Self(cef_errorcode_t::ERR_BLOCKED_BY_FINGERPRINTING_PROTECTION);
+    #[doc = "See [`cef_errorcode_t::ERR_BLOCKED_IN_INCOGNITO_BY_ADMINISTRATOR`] for more documentation."]
+    pub const BLOCKED_IN_INCOGNITO_BY_ADMINISTRATOR: Self =
+        Self(cef_errorcode_t::ERR_BLOCKED_IN_INCOGNITO_BY_ADMINISTRATOR);
     #[doc = "See [`cef_errorcode_t::ERR_CONNECTION_CLOSED`] for more documentation."]
     pub const CONNECTION_CLOSED: Self = Self(cef_errorcode_t::ERR_CONNECTION_CLOSED);
     #[doc = "See [`cef_errorcode_t::ERR_CONNECTION_RESET`] for more documentation."]
@@ -45816,8 +45904,6 @@ impl Errorcode {
         Self(cef_errorcode_t::ERR_SSL_CLIENT_AUTH_CERT_NEEDED);
     #[doc = "See [`cef_errorcode_t::ERR_TUNNEL_CONNECTION_FAILED`] for more documentation."]
     pub const TUNNEL_CONNECTION_FAILED: Self = Self(cef_errorcode_t::ERR_TUNNEL_CONNECTION_FAILED);
-    #[doc = "See [`cef_errorcode_t::ERR_NO_SSL_VERSIONS_ENABLED`] for more documentation."]
-    pub const NO_SSL_VERSIONS_ENABLED: Self = Self(cef_errorcode_t::ERR_NO_SSL_VERSIONS_ENABLED);
     #[doc = "See [`cef_errorcode_t::ERR_SSL_VERSION_OR_CIPHER_MISMATCH`] for more documentation."]
     pub const SSL_VERSION_OR_CIPHER_MISMATCH: Self =
         Self(cef_errorcode_t::ERR_SSL_VERSION_OR_CIPHER_MISMATCH);
@@ -45875,9 +45961,6 @@ impl Errorcode {
     pub const NETWORK_ACCESS_DENIED: Self = Self(cef_errorcode_t::ERR_NETWORK_ACCESS_DENIED);
     #[doc = "See [`cef_errorcode_t::ERR_TEMPORARILY_THROTTLED`] for more documentation."]
     pub const TEMPORARILY_THROTTLED: Self = Self(cef_errorcode_t::ERR_TEMPORARILY_THROTTLED);
-    #[doc = "See [`cef_errorcode_t::ERR_HTTPS_PROXY_TUNNEL_RESPONSE_REDIRECT`] for more documentation."]
-    pub const HTTPS_PROXY_TUNNEL_RESPONSE_REDIRECT: Self =
-        Self(cef_errorcode_t::ERR_HTTPS_PROXY_TUNNEL_RESPONSE_REDIRECT);
     #[doc = "See [`cef_errorcode_t::ERR_SSL_CLIENT_AUTH_SIGNATURE_FAILED`] for more documentation."]
     pub const SSL_CLIENT_AUTH_SIGNATURE_FAILED: Self =
         Self(cef_errorcode_t::ERR_SSL_CLIENT_AUTH_SIGNATURE_FAILED);
@@ -45887,11 +45970,6 @@ impl Errorcode {
     pub const WS_PROTOCOL_ERROR: Self = Self(cef_errorcode_t::ERR_WS_PROTOCOL_ERROR);
     #[doc = "See [`cef_errorcode_t::ERR_ADDRESS_IN_USE`] for more documentation."]
     pub const ADDRESS_IN_USE: Self = Self(cef_errorcode_t::ERR_ADDRESS_IN_USE);
-    #[doc = "See [`cef_errorcode_t::ERR_SSL_HANDSHAKE_NOT_COMPLETED`] for more documentation."]
-    pub const SSL_HANDSHAKE_NOT_COMPLETED: Self =
-        Self(cef_errorcode_t::ERR_SSL_HANDSHAKE_NOT_COMPLETED);
-    #[doc = "See [`cef_errorcode_t::ERR_SSL_BAD_PEER_PUBLIC_KEY`] for more documentation."]
-    pub const SSL_BAD_PEER_PUBLIC_KEY: Self = Self(cef_errorcode_t::ERR_SSL_BAD_PEER_PUBLIC_KEY);
     #[doc = "See [`cef_errorcode_t::ERR_SSL_PINNED_KEY_NOT_IN_CERT_CHAIN`] for more documentation."]
     pub const SSL_PINNED_KEY_NOT_IN_CERT_CHAIN: Self =
         Self(cef_errorcode_t::ERR_SSL_PINNED_KEY_NOT_IN_CERT_CHAIN);
@@ -46054,14 +46132,6 @@ impl Errorcode {
     pub const CONTENT_DECODING_FAILED: Self = Self(cef_errorcode_t::ERR_CONTENT_DECODING_FAILED);
     #[doc = "See [`cef_errorcode_t::ERR_NETWORK_IO_SUSPENDED`] for more documentation."]
     pub const NETWORK_IO_SUSPENDED: Self = Self(cef_errorcode_t::ERR_NETWORK_IO_SUSPENDED);
-    #[doc = "See [`cef_errorcode_t::ERR_SYN_REPLY_NOT_RECEIVED`] for more documentation."]
-    pub const SYN_REPLY_NOT_RECEIVED: Self = Self(cef_errorcode_t::ERR_SYN_REPLY_NOT_RECEIVED);
-    #[doc = "See [`cef_errorcode_t::ERR_ENCODING_CONVERSION_FAILED`] for more documentation."]
-    pub const ENCODING_CONVERSION_FAILED: Self =
-        Self(cef_errorcode_t::ERR_ENCODING_CONVERSION_FAILED);
-    #[doc = "See [`cef_errorcode_t::ERR_UNRECOGNIZED_FTP_DIRECTORY_LISTING_FORMAT`] for more documentation."]
-    pub const UNRECOGNIZED_FTP_DIRECTORY_LISTING_FORMAT: Self =
-        Self(cef_errorcode_t::ERR_UNRECOGNIZED_FTP_DIRECTORY_LISTING_FORMAT);
     #[doc = "See [`cef_errorcode_t::ERR_NO_SUPPORTED_PROXIES`] for more documentation."]
     pub const NO_SUPPORTED_PROXIES: Self = Self(cef_errorcode_t::ERR_NO_SUPPORTED_PROXIES);
     #[doc = "See [`cef_errorcode_t::ERR_HTTP2_PROTOCOL_ERROR`] for more documentation."]
@@ -46224,6 +46294,9 @@ impl Errorcode {
     #[doc = "See [`cef_errorcode_t::ERR_TRUST_TOKEN_OPERATION_SUCCESS_WITHOUT_SENDING_REQUEST`] for more documentation."]
     pub const TRUST_TOKEN_OPERATION_SUCCESS_WITHOUT_SENDING_REQUEST: Self =
         Self(cef_errorcode_t::ERR_TRUST_TOKEN_OPERATION_SUCCESS_WITHOUT_SENDING_REQUEST);
+    #[doc = "See [`cef_errorcode_t::ERR_HTTPENGINE_PROVIDER_IN_USE`] for more documentation."]
+    pub const HTTPENGINE_PROVIDER_IN_USE: Self =
+        Self(cef_errorcode_t::ERR_HTTPENGINE_PROVIDER_IN_USE);
     #[doc = "See [`cef_errorcode_t::ERR_PKCS12_IMPORT_BAD_PASSWORD`] for more documentation."]
     pub const PKCS12_IMPORT_BAD_PASSWORD: Self =
         Self(cef_errorcode_t::ERR_PKCS12_IMPORT_BAD_PASSWORD);
@@ -46264,8 +46337,6 @@ impl Errorcode {
     pub const DNS_MALFORMED_RESPONSE: Self = Self(cef_errorcode_t::ERR_DNS_MALFORMED_RESPONSE);
     #[doc = "See [`cef_errorcode_t::ERR_DNS_SERVER_REQUIRES_TCP`] for more documentation."]
     pub const DNS_SERVER_REQUIRES_TCP: Self = Self(cef_errorcode_t::ERR_DNS_SERVER_REQUIRES_TCP);
-    #[doc = "See [`cef_errorcode_t::ERR_DNS_SERVER_FAILED`] for more documentation."]
-    pub const DNS_SERVER_FAILED: Self = Self(cef_errorcode_t::ERR_DNS_SERVER_FAILED);
     #[doc = "See [`cef_errorcode_t::ERR_DNS_TIMED_OUT`] for more documentation."]
     pub const DNS_TIMED_OUT: Self = Self(cef_errorcode_t::ERR_DNS_TIMED_OUT);
     #[doc = "See [`cef_errorcode_t::ERR_DNS_CACHE_MISS`] for more documentation."]
@@ -46290,6 +46361,16 @@ impl Errorcode {
     #[doc = "See [`cef_errorcode_t::ERR_DNS_CACHE_INVALIDATION_IN_PROGRESS`] for more documentation."]
     pub const DNS_CACHE_INVALIDATION_IN_PROGRESS: Self =
         Self(cef_errorcode_t::ERR_DNS_CACHE_INVALIDATION_IN_PROGRESS);
+    #[doc = "See [`cef_errorcode_t::ERR_DNS_FORMAT_ERROR`] for more documentation."]
+    pub const DNS_FORMAT_ERROR: Self = Self(cef_errorcode_t::ERR_DNS_FORMAT_ERROR);
+    #[doc = "See [`cef_errorcode_t::ERR_DNS_SERVER_FAILURE`] for more documentation."]
+    pub const DNS_SERVER_FAILURE: Self = Self(cef_errorcode_t::ERR_DNS_SERVER_FAILURE);
+    #[doc = "See [`cef_errorcode_t::ERR_DNS_NOT_IMPLEMENTED`] for more documentation."]
+    pub const DNS_NOT_IMPLEMENTED: Self = Self(cef_errorcode_t::ERR_DNS_NOT_IMPLEMENTED);
+    #[doc = "See [`cef_errorcode_t::ERR_DNS_REFUSED`] for more documentation."]
+    pub const DNS_REFUSED: Self = Self(cef_errorcode_t::ERR_DNS_REFUSED);
+    #[doc = "See [`cef_errorcode_t::ERR_DNS_OTHER_FAILURE`] for more documentation."]
+    pub const DNS_OTHER_FAILURE: Self = Self(cef_errorcode_t::ERR_DNS_OTHER_FAILURE);
     #[doc = "See [`cef_errorcode_t::ERR_BLOB_INVALID_CONSTRUCTION_ARGUMENTS`] for more documentation."]
     pub const BLOB_INVALID_CONSTRUCTION_ARGUMENTS: Self =
         Self(cef_errorcode_t::ERR_BLOB_INVALID_CONSTRUCTION_ARGUMENTS);
@@ -50162,6 +50243,14 @@ impl ChromePageActionIconType {
         Self(cef_chrome_page_action_icon_type_t::CEF_CPAIT_LENS_OVERLAY_HOMEWORK);
     #[doc = "See [`cef_chrome_page_action_icon_type_t::CEF_CPAIT_AI_MODE`] for more documentation."]
     pub const AI_MODE: Self = Self(cef_chrome_page_action_icon_type_t::CEF_CPAIT_AI_MODE);
+    #[doc = "See [`cef_chrome_page_action_icon_type_t::CEF_CPAIT_READING_MODE`] for more documentation."]
+    pub const READING_MODE: Self = Self(cef_chrome_page_action_icon_type_t::CEF_CPAIT_READING_MODE);
+    #[doc = "See [`cef_chrome_page_action_icon_type_t::CEF_CPAIT_CONTEXTUAL_SIDE_PANEL`] for more documentation."]
+    pub const CONTEXTUAL_SIDE_PANEL: Self =
+        Self(cef_chrome_page_action_icon_type_t::CEF_CPAIT_CONTEXTUAL_SIDE_PANEL);
+    #[doc = "See [`cef_chrome_page_action_icon_type_t::CEF_CPAIT_JS_OPTIMIZATIONS`] for more documentation."]
+    pub const JS_OPTIMIZATIONS: Self =
+        Self(cef_chrome_page_action_icon_type_t::CEF_CPAIT_JS_OPTIMIZATIONS);
     #[doc = "See [`cef_chrome_page_action_icon_type_t::CEF_CPAIT_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self = Self(cef_chrome_page_action_icon_type_t::CEF_CPAIT_NUM_VALUES);
 }
@@ -50517,6 +50606,12 @@ impl PermissionRequestTypes {
     #[doc = "See [`cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOCAL_NETWORK_ACCESS`] for more documentation."]
     pub const LOCAL_NETWORK_ACCESS: Self =
         Self(cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOCAL_NETWORK_ACCESS);
+    #[doc = "See [`cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOCAL_NETWORK`] for more documentation."]
+    pub const LOCAL_NETWORK: Self =
+        Self(cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOCAL_NETWORK);
+    #[doc = "See [`cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOOPBACK_NETWORK`] for more documentation."]
+    pub const LOOPBACK_NETWORK: Self =
+        Self(cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOOPBACK_NETWORK);
 }
 impl PermissionRequestTypes {
     #[doc = "Get the raw integer representation."]
