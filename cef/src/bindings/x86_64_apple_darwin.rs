@@ -45126,6 +45126,12 @@ impl ContentSettingTypes {
     pub const SUSPICIOUS_NOTIFICATION_SHOW_ORIGINAL: Self = Self(
         cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_SUSPICIOUS_NOTIFICATION_SHOW_ORIGINAL,
     );
+    #[doc = "See [`cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_LOCAL_NETWORK`] for more documentation."]
+    pub const LOCAL_NETWORK: Self =
+        Self(cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_LOCAL_NETWORK);
+    #[doc = "See [`cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_LOOPBACK_NETWORK`] for more documentation."]
+    pub const LOOPBACK_NETWORK: Self =
+        Self(cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_LOOPBACK_NETWORK);
     #[doc = "See [`cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_NUM_VALUES`] for more documentation."]
     pub const NUM_VALUES: Self =
         Self(cef_content_setting_types_t::CEF_CONTENT_SETTING_TYPE_NUM_VALUES);
@@ -45799,6 +45805,9 @@ impl Errorcode {
     #[doc = "See [`cef_errorcode_t::ERR_BLOCKED_BY_FINGERPRINTING_PROTECTION`] for more documentation."]
     pub const BLOCKED_BY_FINGERPRINTING_PROTECTION: Self =
         Self(cef_errorcode_t::ERR_BLOCKED_BY_FINGERPRINTING_PROTECTION);
+    #[doc = "See [`cef_errorcode_t::ERR_BLOCKED_IN_INCOGNITO_BY_ADMINISTRATOR`] for more documentation."]
+    pub const BLOCKED_IN_INCOGNITO_BY_ADMINISTRATOR: Self =
+        Self(cef_errorcode_t::ERR_BLOCKED_IN_INCOGNITO_BY_ADMINISTRATOR);
     #[doc = "See [`cef_errorcode_t::ERR_CONNECTION_CLOSED`] for more documentation."]
     pub const CONNECTION_CLOSED: Self = Self(cef_errorcode_t::ERR_CONNECTION_CLOSED);
     #[doc = "See [`cef_errorcode_t::ERR_CONNECTION_RESET`] for more documentation."]
@@ -46257,8 +46266,6 @@ impl Errorcode {
     pub const DNS_MALFORMED_RESPONSE: Self = Self(cef_errorcode_t::ERR_DNS_MALFORMED_RESPONSE);
     #[doc = "See [`cef_errorcode_t::ERR_DNS_SERVER_REQUIRES_TCP`] for more documentation."]
     pub const DNS_SERVER_REQUIRES_TCP: Self = Self(cef_errorcode_t::ERR_DNS_SERVER_REQUIRES_TCP);
-    #[doc = "See [`cef_errorcode_t::ERR_DNS_SERVER_FAILED`] for more documentation."]
-    pub const DNS_SERVER_FAILED: Self = Self(cef_errorcode_t::ERR_DNS_SERVER_FAILED);
     #[doc = "See [`cef_errorcode_t::ERR_DNS_TIMED_OUT`] for more documentation."]
     pub const DNS_TIMED_OUT: Self = Self(cef_errorcode_t::ERR_DNS_TIMED_OUT);
     #[doc = "See [`cef_errorcode_t::ERR_DNS_CACHE_MISS`] for more documentation."]
@@ -46283,6 +46290,16 @@ impl Errorcode {
     #[doc = "See [`cef_errorcode_t::ERR_DNS_CACHE_INVALIDATION_IN_PROGRESS`] for more documentation."]
     pub const DNS_CACHE_INVALIDATION_IN_PROGRESS: Self =
         Self(cef_errorcode_t::ERR_DNS_CACHE_INVALIDATION_IN_PROGRESS);
+    #[doc = "See [`cef_errorcode_t::ERR_DNS_FORMAT_ERROR`] for more documentation."]
+    pub const DNS_FORMAT_ERROR: Self = Self(cef_errorcode_t::ERR_DNS_FORMAT_ERROR);
+    #[doc = "See [`cef_errorcode_t::ERR_DNS_SERVER_FAILURE`] for more documentation."]
+    pub const DNS_SERVER_FAILURE: Self = Self(cef_errorcode_t::ERR_DNS_SERVER_FAILURE);
+    #[doc = "See [`cef_errorcode_t::ERR_DNS_NOT_IMPLEMENTED`] for more documentation."]
+    pub const DNS_NOT_IMPLEMENTED: Self = Self(cef_errorcode_t::ERR_DNS_NOT_IMPLEMENTED);
+    #[doc = "See [`cef_errorcode_t::ERR_DNS_REFUSED`] for more documentation."]
+    pub const DNS_REFUSED: Self = Self(cef_errorcode_t::ERR_DNS_REFUSED);
+    #[doc = "See [`cef_errorcode_t::ERR_DNS_OTHER_FAILURE`] for more documentation."]
+    pub const DNS_OTHER_FAILURE: Self = Self(cef_errorcode_t::ERR_DNS_OTHER_FAILURE);
     #[doc = "See [`cef_errorcode_t::ERR_BLOB_INVALID_CONSTRUCTION_ARGUMENTS`] for more documentation."]
     pub const BLOB_INVALID_CONSTRUCTION_ARGUMENTS: Self =
         Self(cef_errorcode_t::ERR_BLOB_INVALID_CONSTRUCTION_ARGUMENTS);
@@ -50518,6 +50535,12 @@ impl PermissionRequestTypes {
     #[doc = "See [`cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOCAL_NETWORK_ACCESS`] for more documentation."]
     pub const LOCAL_NETWORK_ACCESS: Self =
         Self(cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOCAL_NETWORK_ACCESS);
+    #[doc = "See [`cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOCAL_NETWORK`] for more documentation."]
+    pub const LOCAL_NETWORK: Self =
+        Self(cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOCAL_NETWORK);
+    #[doc = "See [`cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOOPBACK_NETWORK`] for more documentation."]
+    pub const LOOPBACK_NETWORK: Self =
+        Self(cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOOPBACK_NETWORK);
 }
 impl PermissionRequestTypes {
     #[doc = "Get the raw integer representation."]

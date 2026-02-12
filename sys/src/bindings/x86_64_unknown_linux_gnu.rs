@@ -18,21 +18,22 @@ pub const CEF_API_VERSION_14100: i32 = 14100;
 pub const CEF_API_VERSION_14200: i32 = 14200;
 pub const CEF_API_VERSION_14300: i32 = 14300;
 pub const CEF_API_VERSION_14400: i32 = 14400;
+pub const CEF_API_VERSION_14500: i32 = 14500;
 pub const CEF_API_VERSION_999998: i32 = 999998;
 pub const CEF_API_VERSION_999999: i32 = 999999;
 pub const CEF_API_VERSION_MIN: i32 = 13300;
-pub const CEF_API_VERSION_LAST: i32 = 14400;
+pub const CEF_API_VERSION_LAST: i32 = 14500;
 pub const CEF_API_VERSION_EXPERIMENTAL: i32 = 999999;
 pub const CEF_API_VERSION_NEXT: i32 = 999998;
 pub const CEF_API_VERSION: i32 = 999999;
-pub const CEF_VERSION: &[u8; 42] = b"144.0.13+g9f739aa+chromium-144.0.7559.133\0";
-pub const CEF_VERSION_MAJOR: i32 = 144;
+pub const CEF_VERSION: &[u8; 41] = b"145.0.22+g0fa8d1b+chromium-145.0.7632.45\0";
+pub const CEF_VERSION_MAJOR: i32 = 145;
 pub const CEF_VERSION_MINOR: i32 = 0;
-pub const CEF_VERSION_PATCH: i32 = 13;
-pub const CHROME_VERSION_MAJOR: i32 = 144;
+pub const CEF_VERSION_PATCH: i32 = 22;
+pub const CHROME_VERSION_MAJOR: i32 = 145;
 pub const CHROME_VERSION_MINOR: i32 = 0;
-pub const CHROME_VERSION_BUILD: i32 = 7559;
-pub const CHROME_VERSION_PATCH: i32 = 133;
+pub const CHROME_VERSION_BUILD: i32 = 7632;
+pub const CHROME_VERSION_PATCH: i32 = 45;
 pub type __uint16_t = ::std::os::raw::c_ushort;
 pub type __uint_least16_t = __uint16_t;
 pub type __pid_t = ::std::os::raw::c_int;
@@ -779,7 +780,11 @@ pub enum cef_content_setting_types_t {
     CEF_CONTENT_SETTING_TYPE_PERMISSION_ACTIONS_HISTORY = 125,
     #[doc = " Website setting to indicate whether the user has selected \"show original\"\n when suspicious warning is shown. If the user has selected this, the\n notification permission will not be revoked based on suspicious verdict."]
     CEF_CONTENT_SETTING_TYPE_SUSPICIOUS_NOTIFICATION_SHOW_ORIGINAL = 126,
-    CEF_CONTENT_SETTING_TYPE_NUM_VALUES = 127,
+    #[doc = " Content setting for whether the site is allowed to make local network\n requests. Split from LOCAL_NETWORK_ACCESS."]
+    CEF_CONTENT_SETTING_TYPE_LOCAL_NETWORK = 127,
+    #[doc = " Content setting for whether the site is allowed to make loopback network\n requests. Split from LOCAL_NETWORK_ACCESS."]
+    CEF_CONTENT_SETTING_TYPE_LOOPBACK_NETWORK = 128,
+    CEF_CONTENT_SETTING_TYPE_NUM_VALUES = 129,
 }
 #[repr(u32)]
 #[non_exhaustive]
@@ -1711,6 +1716,7 @@ pub enum cef_errorcode_t {
     ERR_BLOCKED_BY_ORB = -32,
     ERR_NETWORK_ACCESS_REVOKED = -33,
     ERR_BLOCKED_BY_FINGERPRINTING_PROTECTION = -34,
+    ERR_BLOCKED_IN_INCOGNITO_BY_ADMINISTRATOR = -35,
     ERR_CONNECTION_CLOSED = -100,
     ERR_CONNECTION_RESET = -101,
     ERR_CONNECTION_REFUSED = -102,
@@ -1901,7 +1907,6 @@ pub enum cef_errorcode_t {
     ERR_CERT_VERIFIER_CHANGED = -716,
     ERR_DNS_MALFORMED_RESPONSE = -800,
     ERR_DNS_SERVER_REQUIRES_TCP = -801,
-    ERR_DNS_SERVER_FAILED = -802,
     ERR_DNS_TIMED_OUT = -803,
     ERR_DNS_CACHE_MISS = -804,
     ERR_DNS_SEARCH_EMPTY = -805,
@@ -1912,6 +1917,11 @@ pub enum cef_errorcode_t {
     ERR_DNS_NO_MATCHING_SUPPORTED_ALPN = -811,
     ERR_DNS_SECURE_PROBE_RECORD_INVALID = -814,
     ERR_DNS_CACHE_INVALIDATION_IN_PROGRESS = -815,
+    ERR_DNS_FORMAT_ERROR = -816,
+    ERR_DNS_SERVER_FAILURE = -817,
+    ERR_DNS_NOT_IMPLEMENTED = -818,
+    ERR_DNS_REFUSED = -819,
+    ERR_DNS_OTHER_FAILURE = -820,
     ERR_BLOB_INVALID_CONSTRUCTION_ARGUMENTS = -900,
     ERR_BLOB_OUT_OF_MEMORY = -901,
     ERR_BLOB_FILE_WRITE_FAILED = -902,
@@ -4257,6 +4267,8 @@ pub enum cef_permission_request_types_t {
     CEF_PERMISSION_TYPE_WINDOW_MANAGEMENT = 8388608,
     CEF_PERMISSION_TYPE_FILE_SYSTEM_ACCESS = 16777216,
     CEF_PERMISSION_TYPE_LOCAL_NETWORK_ACCESS = 33554432,
+    CEF_PERMISSION_TYPE_LOCAL_NETWORK = 67108864,
+    CEF_PERMISSION_TYPE_LOOPBACK_NETWORK = 134217728,
 }
 #[repr(u32)]
 #[non_exhaustive]
@@ -7296,7 +7308,7 @@ const _: () = {
 #[doc = "\n Structure used for managing cookies. The functions of this structure may be\n called on any thread unless otherwise indicated.\n\n NOTE: This struct is allocated DLL-side.\n"]
 pub type cef_cookie_manager_t = _cef_cookie_manager_t;
 unsafe extern "C" {
-    #[doc = "\n Returns the global cookie manager. By default data will be stored at\n cef_settings_t.cache_path if specified or in memory otherwise. If |callback|\n is non-NULL it will be executed asnychronously on the UI thread after the\n manager's storage has been initialized. Using this function is equivalent to\n calling cef_request_context_t::cef_request_context_get_global_context()->Get\n DefaultCookieManager().\n"]
+    #[doc = "\n Returns the global cookie manager. By default data will be stored at\n cef_settings_t.cache_path if specified or in memory otherwise. If |callback|\n is non-NULL it will be executed asnychronously on the UI thread after the\n manager's storage has been initialized. Using this function is equivalent to\n calling cef_request_context_t::cef_request_context_get_global_context()-\n >GetDefaultCookieManager().\n"]
     pub fn cef_cookie_manager_get_global_manager(
         callback: *mut _cef_completion_callback_t,
     ) -> *mut cef_cookie_manager_t;
@@ -7440,7 +7452,7 @@ const _: () = {
 #[doc = "\n Supports discovery of and communication with media devices on the local\n network via the Cast and DIAL protocols. The functions of this structure may\n be called on any browser process thread unless otherwise indicated.\n\n NOTE: This struct is allocated DLL-side.\n"]
 pub type cef_media_router_t = _cef_media_router_t;
 unsafe extern "C" {
-    #[doc = "\n Returns the MediaRouter object associated with the global request context.\n If |callback| is non-NULL it will be executed asnychronously on the UI\n thread after the manager's storage has been initialized. Equivalent to\n calling cef_request_context_t::cef_request_context_get_global_context()->get\n _media_router().\n"]
+    #[doc = "\n Returns the MediaRouter object associated with the global request context.\n If |callback| is non-NULL it will be executed asnychronously on the UI\n thread after the manager's storage has been initialized. Equivalent to\n calling cef_request_context_t::cef_request_context_get_global_context()-\n >get_media_router().\n"]
     pub fn cef_media_router_get_global(
         callback: *mut _cef_completion_callback_t,
     ) -> *mut cef_media_router_t;
@@ -13926,7 +13938,7 @@ const _: () = {
 #[doc = "\n Structure that creates cef_resource_handler_t instances for handling scheme\n requests. The functions of this structure will always be called on the IO\n thread.\n\n NOTE: This struct is allocated client-side.\n"]
 pub type cef_scheme_handler_factory_t = _cef_scheme_handler_factory_t;
 unsafe extern "C" {
-    #[doc = "\n Register a scheme handler factory with the global request context. An NULL\n |domain_name| value for a standard scheme will cause the factory to match\n all domain names. The |domain_name| value will be ignored for non-standard\n schemes. If |scheme_name| is a built-in scheme and no handler is returned by\n |factory| then the built-in scheme handler factory will be called. If\n |scheme_name| is a custom scheme then you must also implement the\n cef_app_t::on_register_custom_schemes() function in all processes. This\n function may be called multiple times to change or remove the factory that\n matches the specified |scheme_name| and optional |domain_name|. Returns\n false (0) if an error occurs. This function may be called on any thread in\n the browser process. Using this function is equivalent to calling cef_reques\n t_context_t::cef_request_context_get_global_context()->register_scheme_handl\n er_factory().\n"]
+    #[doc = "\n Register a scheme handler factory with the global request context. An NULL\n |domain_name| value for a standard scheme will cause the factory to match\n all domain names. The |domain_name| value will be ignored for non-standard\n schemes. If |scheme_name| is a built-in scheme and no handler is returned by\n |factory| then the built-in scheme handler factory will be called. If\n |scheme_name| is a custom scheme then you must also implement the\n cef_app_t::on_register_custom_schemes() function in all processes. This\n function may be called multiple times to change or remove the factory that\n matches the specified |scheme_name| and optional |domain_name|. Returns\n false (0) if an error occurs. This function may be called on any thread in\n the browser process. Using this function is equivalent to calling cef_reques\n t_context_t::cef_request_context_get_global_context()-\n >register_scheme_handler_factory().\n"]
     pub fn cef_register_scheme_handler_factory(
         scheme_name: *const cef_string_t,
         domain_name: *const cef_string_t,
@@ -13934,7 +13946,7 @@ unsafe extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 unsafe extern "C" {
-    #[doc = "\n Clear all scheme handler factories registered with the global request\n context. Returns false (0) on error. This function may be called on any\n thread in the browser process. Using this function is equivalent to calling\n cef_request_context_t::cef_request_context_get_global_context()->clear_schem\n e_handler_factories().\n"]
+    #[doc = "\n Clear all scheme handler factories registered with the global request\n context. Returns false (0) on error. This function may be called on any\n thread in the browser process. Using this function is equivalent to calling\n cef_request_context_t::cef_request_context_get_global_context()-\n >clear_scheme_handler_factories().\n"]
     pub fn cef_clear_scheme_handler_factories() -> ::std::os::raw::c_int;
 }
 #[doc = "\n Implement this structure to provide handler implementations. Methods will be\n called by the process and/or thread indicated.\n\n NOTE: This struct is allocated client-side.\n"]

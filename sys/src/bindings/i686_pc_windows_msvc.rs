@@ -18,21 +18,22 @@ pub const CEF_API_VERSION_14100: i32 = 14100;
 pub const CEF_API_VERSION_14200: i32 = 14200;
 pub const CEF_API_VERSION_14300: i32 = 14300;
 pub const CEF_API_VERSION_14400: i32 = 14400;
+pub const CEF_API_VERSION_14500: i32 = 14500;
 pub const CEF_API_VERSION_999998: i32 = 999998;
 pub const CEF_API_VERSION_999999: i32 = 999999;
 pub const CEF_API_VERSION_MIN: i32 = 13300;
-pub const CEF_API_VERSION_LAST: i32 = 14400;
+pub const CEF_API_VERSION_LAST: i32 = 14500;
 pub const CEF_API_VERSION_EXPERIMENTAL: i32 = 999999;
 pub const CEF_API_VERSION_NEXT: i32 = 999998;
 pub const CEF_API_VERSION: i32 = 999999;
-pub const CEF_VERSION: &[u8; 42] = b"144.0.13+g9f739aa+chromium-144.0.7559.133\0";
-pub const CEF_VERSION_MAJOR: i32 = 144;
+pub const CEF_VERSION: &[u8; 41] = b"145.0.22+g0fa8d1b+chromium-145.0.7632.45\0";
+pub const CEF_VERSION_MAJOR: i32 = 145;
 pub const CEF_VERSION_MINOR: i32 = 0;
-pub const CEF_VERSION_PATCH: i32 = 13;
-pub const CHROME_VERSION_MAJOR: i32 = 144;
+pub const CEF_VERSION_PATCH: i32 = 22;
+pub const CHROME_VERSION_MAJOR: i32 = 145;
 pub const CHROME_VERSION_MINOR: i32 = 0;
-pub const CHROME_VERSION_BUILD: i32 = 7559;
-pub const CHROME_VERSION_PATCH: i32 = 133;
+pub const CHROME_VERSION_BUILD: i32 = 7632;
+pub const CHROME_VERSION_PATCH: i32 = 45;
 unsafe extern "C" {
     #[doc = "\n Configures the CEF API version and returns API hashes for the libcef\n library. The returned string is owned by the library and should not be\n freed. The |version| parameter should be CEF_API_VERSION and any changes to\n this value will be ignored after the first call to this method. The |entry|\n parameter describes which hash value will be returned:\n\n 0 - CEF_API_HASH_PLATFORM\n 1 - CEF_API_HASH_UNIVERSAL (deprecated, same as CEF_API_HASH_PLATFORM)\n 2 - CEF_COMMIT_HASH (from cef_version.h)\n"]
     pub fn cef_api_hash(
@@ -775,7 +776,11 @@ pub enum cef_content_setting_types_t {
     CEF_CONTENT_SETTING_TYPE_PERMISSION_ACTIONS_HISTORY = 125,
     #[doc = " Website setting to indicate whether the user has selected \"show original\"\n when suspicious warning is shown. If the user has selected this, the\n notification permission will not be revoked based on suspicious verdict."]
     CEF_CONTENT_SETTING_TYPE_SUSPICIOUS_NOTIFICATION_SHOW_ORIGINAL = 126,
-    CEF_CONTENT_SETTING_TYPE_NUM_VALUES = 127,
+    #[doc = " Content setting for whether the site is allowed to make local network\n requests. Split from LOCAL_NETWORK_ACCESS."]
+    CEF_CONTENT_SETTING_TYPE_LOCAL_NETWORK = 127,
+    #[doc = " Content setting for whether the site is allowed to make loopback network\n requests. Split from LOCAL_NETWORK_ACCESS."]
+    CEF_CONTENT_SETTING_TYPE_LOOPBACK_NETWORK = 128,
+    CEF_CONTENT_SETTING_TYPE_NUM_VALUES = 129,
 }
 #[repr(i32)]
 #[non_exhaustive]
@@ -1752,6 +1757,7 @@ pub enum cef_errorcode_t {
     ERR_BLOCKED_BY_ORB = -32,
     ERR_NETWORK_ACCESS_REVOKED = -33,
     ERR_BLOCKED_BY_FINGERPRINTING_PROTECTION = -34,
+    ERR_BLOCKED_IN_INCOGNITO_BY_ADMINISTRATOR = -35,
     ERR_CONNECTION_CLOSED = -100,
     ERR_CONNECTION_RESET = -101,
     ERR_CONNECTION_REFUSED = -102,
@@ -1942,7 +1948,6 @@ pub enum cef_errorcode_t {
     ERR_CERT_VERIFIER_CHANGED = -716,
     ERR_DNS_MALFORMED_RESPONSE = -800,
     ERR_DNS_SERVER_REQUIRES_TCP = -801,
-    ERR_DNS_SERVER_FAILED = -802,
     ERR_DNS_TIMED_OUT = -803,
     ERR_DNS_CACHE_MISS = -804,
     ERR_DNS_SEARCH_EMPTY = -805,
@@ -1953,6 +1958,11 @@ pub enum cef_errorcode_t {
     ERR_DNS_NO_MATCHING_SUPPORTED_ALPN = -811,
     ERR_DNS_SECURE_PROBE_RECORD_INVALID = -814,
     ERR_DNS_CACHE_INVALIDATION_IN_PROGRESS = -815,
+    ERR_DNS_FORMAT_ERROR = -816,
+    ERR_DNS_SERVER_FAILURE = -817,
+    ERR_DNS_NOT_IMPLEMENTED = -818,
+    ERR_DNS_REFUSED = -819,
+    ERR_DNS_OTHER_FAILURE = -820,
     ERR_BLOB_INVALID_CONSTRUCTION_ARGUMENTS = -900,
     ERR_BLOB_OUT_OF_MEMORY = -901,
     ERR_BLOB_FILE_WRITE_FAILED = -902,
@@ -4297,6 +4307,8 @@ pub enum cef_permission_request_types_t {
     CEF_PERMISSION_TYPE_WINDOW_MANAGEMENT = 8388608,
     CEF_PERMISSION_TYPE_FILE_SYSTEM_ACCESS = 16777216,
     CEF_PERMISSION_TYPE_LOCAL_NETWORK_ACCESS = 33554432,
+    CEF_PERMISSION_TYPE_LOCAL_NETWORK = 67108864,
+    CEF_PERMISSION_TYPE_LOOPBACK_NETWORK = 134217728,
 }
 #[repr(i32)]
 #[non_exhaustive]
